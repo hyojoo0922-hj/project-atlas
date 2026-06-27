@@ -19,5 +19,5 @@ export function runOnboardingScenario(deterministic = true): OnboardingResult {
     problem: "신규 고객 유입",
     grow: "온라인 매출",
   };
-  return new OnboardingFlow().run(customerId, answers);
+  return new OnboardingFlow().run(customerId, "로마티 대표", answers);
 }

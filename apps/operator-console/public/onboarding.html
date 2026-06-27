@@ -1,27 +1,37 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Atlas · Onboarding (Operator)</title>
 <style>body{font:14px/1.6 system-ui,sans-serif;margin:0;background:#0f1115;color:#e6e8eb}
-.wrap{max-width:920px;margin:0 auto;padding:24px}h1{font-size:20px}h2{font-size:14px;color:#9aa4b2;margin-top:24px;text-transform:uppercase;letter-spacing:.05em}
-.card{background:#171a21;border:1px solid #232833;border-radius:10px;padding:14px 16px;margin:10px 0}
+.wrap{max-width:880px;margin:0 auto;padding:24px}h1{font-size:20px}h2{font-size:13px;color:#9aa4b2;margin-top:22px;text-transform:uppercase;letter-spacing:.05em}
+.card{background:#171a21;border:1px solid #232833;border-radius:12px;padding:16px;margin:10px 0}
 .kv{color:#9aa4b2}.tag{display:inline-block;background:#1f2530;border-radius:6px;padding:1px 8px;margin:2px;font-size:12px}
-.ok{color:#5bd6a0}.muted{color:#6b7280}.step{display:flex;gap:8px;align-items:center;margin:4px 0}
-.dot{width:8px;height:8px;border-radius:50%;background:#5bd6a0;display:inline-block}
-.note{background:#13251f;border:1px solid #1d3a30;border-radius:8px;padding:10px 14px;color:#9fe3c4;font-size:13px}</style>
+.ok{color:#5bd6a0}.muted{color:#6b7280}
+.cta{display:inline-block;background:#5bd6a0;color:#0f1115;font-weight:700;border-radius:8px;padding:8px 14px;margin-top:8px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.three .b{background:#13182088;border:1px solid #232833;border-radius:10px;padding:10px}
+.lbl{font-size:11px;color:#6b7280;text-transform:uppercase}
+.step{display:flex;gap:8px;align-items:center;margin:4px 0}.dot{width:8px;height:8px;border-radius:50%;background:#5bd6a0;display:inline-block}
+.note{background:#13251f;border:1px solid #1d3a30;border-radius:8px;padding:10px 14px;color:#9fe3c4;font-size:13px}
+.voucher{background:#241f13;border:1px solid #3a3320;border-radius:10px;padding:10px 14px;color:#e3cf9f}</style>
 </head><body><div class="wrap">
   <h1>🛠️ Operator HQ · Onboarding</h1>
-  <div class="note">운영자는 Journey 상태·진단·추천·생성 결과를 본다. (2B: Health/Growth/재추천 추가 예정)</div>
+  <div class="note">운영자는 내부 구조(진단 점수·트리·Audit)를 본다. (2B: Health/Growth/재추천 추가 예정)</div>
+
+  <h2>대표 계정 / 진단권</h2>
+  <div class="card kv">로마티 대표 · voucher 1/1 (active true)</div>
 
   <h2>Customer Journey 상태머신</h2>
-  <div class="card"><div class="step"><span class="dot"></span>signup</div><div class="step"><span class="dot"></span>diagnosing</div><div class="step"><span class="dot"></span>designing</div><div class="step"><span class="dot"></span>recommending</div><div class="step"><span class="dot"></span>reviewing</div><div class="step"><span class="dot"></span>approving</div><div class="step"><span class="dot"></span>created</div></div>
+  <div class="card"><div class="step"><span class="dot"></span>account_created</div><div class="step"><span class="dot"></span>voucher_activated</div><div class="step"><span class="dot"></span>diagnosing</div><div class="step"><span class="dot"></span>designing</div><div class="step"><span class="dot"></span>recommending</div><div class="step"><span class="dot"></span>reviewing</div><div class="step"><span class="dot"></span>approving</div><div class="step"><span class="dot"></span>created</div><div class="step"><span class="dot"></span>first_task</div></div>
 
-  <h2>AI Business Diagnosis</h2>
+  <h2>AI Business Diagnosis (점수 — 내부)</h2>
   <div class="card"><div>operations <b>4</b> — <span class="kv">시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선</span></div><div>marketing <b>3</b> — <span class="kv">핵심 문제가 수요 창출(신규 고객 유입); 온라인 미운영 상태에서 온라인 성장 목표 → 채널 구축 필요</span></div><div>content <b>1.5</b> — <span class="kv">브랜드 미보유 → 브랜드 보이스/콘텐츠 정립 필요</span></div></div>
 
   <h2>설계안 → 생성된 조직</h2>
   <div class="card"><b>로마티 카페</b> (cafe, 초기 성장)
    · CEO 위임 medium/리스크 medium<br>
    부서: <span class="tag">1.Operations</span><span class="tag">2.Marketing</span><br>
-   직원: <span class="tag">운영 매니저 (operations, junior)</span><span class="tag">콘텐츠 라이터 (content, junior)</span><br>
-   <span class="kv">조직 트리: company · ceo · department · employee · department · employee</span></div>
+   직원: <span class="tag">운영 매니저 (operations, junior)</span><span class="tag">콘텐츠 라이터 (content, junior)</span><br><span class="kv">트리: company · ceo · department · employee · department · employee</span></div>
+
+  <h2>첫 업무 추천</h2>
+  <div class="card kv">Operations의 운영 매니저에게 첫 업무(inventory-mgmt)를 맡겨보세요.</div>
 
   <h2>Audit</h2>
-  <div class="card"><div class="kv">• <b>consulting</b> — 컨설팅 응답 수집: 로마티 카페 (cafe/early_growth)</div><div class="kv">• <b>diagnosis</b> — 핵심 병목 = 운영 체계 (시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선)</div><div class="kv">• <b>recommendation</b> — 추천 부서: 1.Operations, 2.Marketing</div><div class="kv">• <b>design</b> — 설계안 생성(draft): 로마티 카페</div><div class="kv">• <b>approval</b> — 대표 승인 완료(founding)</div><div class="kv">• <b>created</b> — Company 생성: 로마티 카페 / 부서 2 / 직원 2</div></div></div></body></html>
+  <div class="card"><div class="kv">• <b>account</b> — 대표 계정 생성: 로마티 대표</div><div class="kv">• <b>voucher</b> — 무료 사업진단권 활성화(계정당 1회)</div><div class="kv">• <b>diagnosis</b> — 핵심 병목 = 운영 체계 (시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선)</div><div class="kv">• <b>design</b> — 설계안 생성(draft): 로마티 카페</div><div class="kv">• <b>approval</b> — 회사 설립 승인 완료(founding)</div><div class="kv">• <b>created</b> — Company 생성: 로마티 카페</div><div class="kv">• <b>first_task</b> — Operations의 운영 매니저에게 첫 업무(inventory-mgmt)를 맡겨보세요.</div></div></div></body></html>

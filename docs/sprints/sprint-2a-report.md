@@ -78,3 +78,25 @@ Departments (진단 우선순위순):
 ## 10. 범위 준수 (CPO 기준 고정)
 - 회원가입=무료 AI 컨설팅 / 질문 폼이 아닌 진단 / 고객은 승인만 — 모두 반영.
 - 운영 루프·Health 롤업·Growth·재추천은 **미구현(2B)**. 실모델·로그인·결제·영상/이미지 없음(Gateway mock·원가 $0).
+
+---
+
+## 부록 · CPO UX Sprint #001 IA 반영 (10원칙)
+| # | 원칙 | 반영 |
+|---|---|---|
+| 1 | "대표 계정 생성" 우선 | `createOwnerAccount`, 상태 `account_created`, 화면 카피 |
+| 2 | 무료 사업진단권(계정당 1회) | `DiagnosisVoucher{total:1}`, `consumeVoucher` 재사용 차단(테스트) |
+| 3 | 가입 직후 빈 대시보드 금지 | `account_created → voucher_activated → diagnosing` 곧장 진입 |
+| 4 | 항상 3요소 노출 | `buildCustomerView()` → 현재 단계·공동창업자의 판단·대표의 다음 행동 |
+| 5 | 내부 구조 숨김 | 고객 렌더에서 Skill Lifecycle·Matching Score·Certification·Model·Token·CostLedger 제외 |
+| 6 | 점수보다 우선순위 판단 | 고객 뷰는 `diagnosis.rationale`("운영 먼저") 노출, 점수는 Operator 전용 |
+| 7 | 회사 설립 승인 느낌 | `approving` CTA "이 설계안으로 내 회사 만들기" |
+| 8 | 생성 후 첫 업무 | `first_task` + `FirstTaskSuggestion`, CTA "첫 업무 맡기기" |
+| 9 | 플랜/크레딧 = 계속 운영 | `first_task` nextAction "계속 회사 운영하기" |
+| 10 | 2A 범위 유지 | Health/Growth/재추천 미구현, `first_task`가 종착 |
+
+**고객 화면에서 숨긴 내부 요소**: Skill Lifecycle · Matching Score · Certification · Model · Token · CostLedger · Health/KPI 내부 수치 (→ Operator HQ 화면에서만 노출).
+
+**대표 계정 → 무료 진단권 → 진단 → 설계안 → 승인 → Company 생성 흐름**:
+`account_created → voucher_activated → diagnosing → designing → recommending → reviewing → approving → created → first_task`
+(고객 행위는 계정 생성·진단권 활성화·컨설팅 응답·**회사 설립 승인** 뿐. 나머지는 AI 공동창업자가 수행.)

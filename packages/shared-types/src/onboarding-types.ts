@@ -166,7 +166,35 @@ export interface CreatedCompany {
   tree: OrgNode[];
 }
 
-// Customer Journey 상태
+// ───────────────────────── 대표 계정 / 무료 사업진단권 (UX Sprint #001) ─────────────────────────
+export interface DiagnosisVoucher {
+  total: number;     // 계정당 1
+  used: number;
+  active: boolean;   // 활성화 여부
+}
+export interface OwnerAccount {
+  id: Id;
+  ownerName: string;          // 대표
+  voucher: DiagnosisVoucher;
+}
+
+/** Company 생성 직후 첫 업무 추천 (실행 아님 — 2B에서 운영) */
+export interface FirstTaskSuggestion {
+  departmentName: string;
+  employeePersona: string;
+  skill: string;
+  label: string;              // CTA: "첫 업무 맡기기"
+  description: string;
+}
+
+/** 고객 화면 항상-노출 3요소 (현재 단계 / 공동창업자의 판단 / 대표의 다음 행동) */
+export interface CustomerView {
+  stage: string;              // 현재 단계
+  cofounderJudgment: string;  // 공동창업자의 판단 (점수 아닌 '판단')
+  nextAction: string;         // 대표의 다음 행동 (CTA)
+}
+
+// Customer Journey 상태 (UX Sprint #001 IA 반영)
 export type JourneyState =
-  | "signup" | "diagnosing" | "designing" | "recommending"
-  | "reviewing" | "approving" | "created" | "revising";
+  | "account_created" | "voucher_activated" | "diagnosing" | "designing"
+  | "recommending" | "reviewing" | "approving" | "created" | "first_task" | "revising";

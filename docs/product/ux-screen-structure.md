@@ -41,15 +41,24 @@ Operator HQ
 
 ## B. Customer Experience (고객)
 
-### 온보딩 (Customer Journey — 개정 #004, 핵심 경험)
+### 온보딩 (Customer Journey — 개정 #004 + CPO UX Sprint #001 IA)
+첫 IA는 "AI 기능 탐색"이 아니라 **대표 계정 생성 → 무료 사업진단권 → 진단 → 공동창업자의 판단 → 설계안 → 회사 설립 승인 → Company 생성 → 첫 업무**다.
 ```
-Onboarding (= 무료 AI 컨설팅)
-├─ Signup/Consult   질문에 응답(업종·단계·직원수·문제·성장분야 …)
-├─ Diagnosis        AI 사업 진단 요약("운영 체계 먼저") — 단순 카드
-├─ Proposed Company AI가 설계한 회사(부서·직원·우선순위) 요약 보기
-└─ Approve          대표 승인 1번 → "회사 생성 완료" → 워크스페이스 입장
+Onboarding (대표 계정 + AI 공동창업자)
+├─ 대표 계정 생성        (회원가입 X → "대표 계정 생성")
+├─ 무료 사업진단권 활성화 (계정당 1회) ── 가입 직후 빈 대시보드 금지, 곧장 진단으로
+├─ 무료 AI 컨설팅        질문 응답(업종·단계·문제·성장 …)
+├─ AI 사업 진단          "지금은 마케팅보다 운영 체계를 먼저" (점수 아닌 우선순위 판단)
+├─ AI 회사 설계안        부서·직원·우선순위 요약 (Skill/점수/인증 비노출)
+├─ 회사 설립 승인        CTA "이 설계안으로 내 회사 만들기"
+├─ Company 생성 완료
+└─ 첫 업무 추천          CTA "첫 업무 맡기기"  → 이후 "계속 회사 운영하기"(플랜/크레딧)
 ```
-> 고객은 **설계하지 않는다.** 답하고 → 진단/설계안을 보고 → 승인. 진단 규칙·추천 가중은 비노출.
+**항상 보이는 3요소(모든 단계)**: ① 현재 단계 · ② 공동창업자의 판단 · ③ 대표의 다음 행동.
+> 고객은 **설계하지 않는다.** 진단을 받고 → 설계안을 보고 → 회사 설립을 승인한다.
+
+**고객 화면에서 숨기는 내부 요소**: Skill Lifecycle · Matching Score · Certification · Model · Token · CostLedger · Health/KPI 내부 수치.
+(이 지표들은 Operator HQ 화면에서만 노출 — `apps/operator-console/public/onboarding.html`)
 
 ### 운영 화면 맵
 ```
@@ -69,7 +78,9 @@ Customer Workspace (= 내 회사)
 
 ---
 
-## Codex 인계 지점 (Sprint 2)
-- 위 화면 맵을 Next.js(App Router)로 구현. 도메인은 `packages/*`·`services/orchestrator` 그대로 사용.
-- 데이터 소스: Sprint 2에서 인메모리 → Postgres로 교체(orchestrator 인터페이스 유지).
-- 정적 스냅샷 HTML을 시각 레퍼런스로 사용.
+## Codex 인계 지점
+- 온보딩 도메인은 `services/onboarding/src/onboarding-flow.ts`의 `OnboardingFlow.run()` 단일 진입점.
+  - 각 단계의 고객 3요소는 `buildCustomerView(state, ctx)`(packages/onboarding) 가 반환 → 화면은 바인딩만.
+  - 정적 스냅샷: `apps/customer-portal/public/onboarding.html`(고객), `apps/operator-console/public/onboarding.html`(운영자).
+- 운영 워크스페이스 화면 맵을 Next.js(App Router)로 구현. 도메인은 `packages/*`·`services/*` 그대로 사용.
+- 데이터 소스: Sprint 3에서 인메모리 → Postgres 교체(인터페이스 유지).

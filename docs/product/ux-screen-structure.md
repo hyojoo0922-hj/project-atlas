@@ -41,10 +41,20 @@ Operator HQ
 
 ## B. Customer Experience (고객)
 
-### 화면 맵
+### 온보딩 (Customer Journey — 개정 #004, 핵심 경험)
+```
+Onboarding (= 무료 AI 컨설팅)
+├─ Signup/Consult   질문에 응답(업종·단계·직원수·문제·성장분야 …)
+├─ Diagnosis        AI 사업 진단 요약("운영 체계 먼저") — 단순 카드
+├─ Proposed Company AI가 설계한 회사(부서·직원·우선순위) 요약 보기
+└─ Approve          대표 승인 1번 → "회사 생성 완료" → 워크스페이스 입장
+```
+> 고객은 **설계하지 않는다.** 답하고 → 진단/설계안을 보고 → 승인. 진단 규칙·추천 가중은 비노출.
+
+### 운영 화면 맵
 ```
 Customer Workspace (= 내 회사)
-├─ My Company      회사 개요(직원·부서는 단순 요약, Health/KPI 내부수치 비노출)
+├─ My Company      회사 개요(직원·부서 단순 요약, Health/KPI 내부수치 비노출)
 ├─ My Employees    채용한 AI 직원(근무 상태) — Skill OS 복잡성 비노출
 ├─ Delegate Work   직원에게 업무 위임(자연어 intent)
 ├─ Results         맡긴 업무의 결과

@@ -1,65 +1,72 @@
-# Sprint 2 제안 (CTO → CEO) — 살아 움직이는 회사
+# Sprint 2 제안 (CTO → CEO) — AI 공동창업자: 온보딩으로 살아나는 회사
 
-> 상태: **재제안 v2 (CEO 승인 대기)** — 개정 #003 반영본
-> 작성: CTO | 기준: 헌법 + 개정 [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](../constitution/AMENDMENT-002-company-centric-organization.md)·[#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md) + [Organization Architecture](../architecture/01-organization-architecture.md)
-> 목표 상향: "회사가 **존재**" → "회사가 **살아 움직임**".
+> 상태: **재제안 v3 (CEO 승인 대기)** — 개정 #004 반영본
+> 작성: CTO | 기준: 헌법 + 개정 [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](../constitution/AMENDMENT-002-company-centric-organization.md)·[#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md)·[#004](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md)
+> + [Onboarding Architecture](../architecture/07-onboarding-architecture.md) · [Organization Architecture](../architecture/01-organization-architecture.md)
+> 핵심 추가: **Customer Journey(온보딩)**를 독립 설계 대상이자 *첫 핵심 경험*으로 포함.
 
 ## 0. 한 줄 목표
-**Company → CEO → Department → Employee → Skill 이 Approval · Growth · Health · Recommendation으로 연결되어
-하나의 살아있는 조직으로 동작함을 코드로 증명한다.** (인메모리, 실모델·로그인·결제 없음. Gateway mock.)
+**"AI 공동창업자가 사업을 진단해 회사를 설계하고, 대표 승인으로 회사가 태어나 살아 움직인다"는
+전체 경험을 코드로 증명한다.** (인메모리, 실모델·로그인·결제 없음. Gateway mock.)
 
 ## 1. 왜 이 범위인가
-- 개정 #003은 **아키텍처 변경**이다. CEO·Approval·Growth·Recommendation을 *도메인*에 먼저 안정화해야 영속화(Sprint 3) 비용이 최소화된다.
-- Sprint 1 자산(Employee/Skill/Matching/Cost) 위에 **Company·CEO·Department·Organization·Health·Approval·Recommendation**을 얹어 *살아있는 루프*를 완성.
-- "회사를 운영하는 플랫폼"의 차별점(CEO 거버넌스·조직 추천·성장 단계)을 0원 원가로 시연.
+- 개정 #004로 **첫 경험이 "회사 생성"이 아니라 "온보딩(진단→설계→승인)"**으로 정의됨 → 이 여정이 Atlas의 핵심.
+- 온보딩이 만들어내는 결과물이 곧 개정 #003의 살아있는 조직(Company→CEO→…)이므로, 둘을 한 Sprint에서 *하나의 흐름*으로 증명.
+- 영속화·실모델은 Sprint 3. 지금은 도메인·여정을 인메모리로 안정화.
 
 ## 2. Sprint 2 산출물 (In Scope)
-1. **도메인 타입 확장** (`shared-types`): `Company`(+stage), `CEO`(+DNA/decisionStyle/riskAppetite/brandPriority/growthStrategy/goal/kpi/authority), `Department`, `OrgNode(ceo 포함)`, `ApprovalWorkflow`/`ApprovalRequest`, `OrgRecommendation`. Employee에 `companyId/departmentId/rank`.
-2. **company-core / ceo-core / department-core 패키지** (신규): 객체 생성·DNA·Goal/KPI·거버넌스.
-3. **organization 패키지** (신규): 트리(add/assign/move/reorg, 불변식: 단일 루트·사이클 금지·CEO 노드).
-4. **approval 패키지** (신규): Approval Workflow 규칙 평가(auto/ceo/dept_head/conditional) + ApprovalRequest.
-5. **health 패키지** (신규): Department/Company Health 롤업(설명 가능 가중합).
-6. **org-recommendation 패키지** (신규): (업종×단계) 템플릿 추천 + rationale. seed: **카페** 템플릿.
-7. **Brand Memory → Company 스코프** 마이그레이션 (`brand-memory`).
-8. **Orchestrator 확장 — 살아있는 루프**: 가입(업종·단계)→조직 추천→CEO·부서·직원 구성→(Sprint 1) 교육·인증·업무→**CEO 거버넌스·Approval 게이트**→성과→**Health 롤업**→**Growth 단계 전이→재추천**.
-9. **데모 v2 + Operator HQ 스냅샷 확장**: Company Dashboard(Health/KPI/Stage)·CEO·Organization 트리·Department·Approval·추천.
+**A. 온보딩 (Customer Journey — 핵심)**
+1. **onboarding 패키지** (신규): 컨설팅 질문 세트 + `OnboardingResponse` 수집, Customer Journey **상태머신**(signup→…→created).
+2. **diagnosis 패키지** (신규): [AI Business Diagnosis](../specs/ai-business-diagnosis-spec.md) 규칙 엔진 → 우선순위·firstBuild + rationale.
+3. **org-recommendation 패키지** (신규): (업종×단계×**진단**) → 추천 부서·직원·Skill·우선순위 + rationale. seed: **카페** 템플릿.
+4. **company-creation 패키지** (신규): `CompanyDesignDraft` 자동 생성 → 대표 승인 → 인스턴스화(Company/CEO/Dept/Employee/Skill).
+
+**B. 조직 도메인 (살아있는 회사)**
+5. **도메인 타입 확장** (`shared-types`): Company(+stage)·CEO·Department·OrgNode(ceo)·ApprovalWorkflow/Request·OnboardingResponse·Diagnosis·CompanyDesignDraft. Employee+companyId/departmentId/rank.
+6. **company-core / ceo-core / department-core / organization / approval / health 패키지** (신규).
+7. **Brand Memory → Company 스코프** 마이그레이션.
+8. **Orchestrator 확장**: 온보딩→생성→운영(Approval 게이트·성과·Health 롤업·성장 단계 전이·재추천)을 하나의 흐름으로.
+
+**C. 시연**
+9. **데모 v2 + 스냅샷**: 온보딩 내러티브(가입→진단→설계→승인→생성) + Operator HQ(Company/CEO/Org/Approval/추천) + Customer(온보딩 4스텝).
 
 ## 3. 명시적 제외 (Out)
-- ❌ 영속 DB(Postgres+RLS) — **Sprint 3**. Sprint 2는 인메모리.
-- ❌ 실제 AI API / Gateway 실연동 — mock 유지(원가 $0).
+- ❌ 영속 DB(Postgres+RLS) — Sprint 3. 인메모리 유지.
+- ❌ 실제 AI API / Gateway 실연동 — mock(원가 $0). (진단·추천도 규칙 기반, LLM 미사용)
 - ❌ 로그인 · 결제 · 영상/이미지 생성.
-- ❌ 학습 기반 추천/Matching v1 — 규칙·템플릿 기반 v0만.
+- ❌ 학습 기반 진단/추천/Matching v1.
 
-## 4. 수직 슬라이스 (데모 v2 — 살아있는 회사)
-> "**카페** 회사 'Acme' 가입(stage=초기 성장) → **AI 조직 추천**: Operations·Marketing(+안정화 시 Customer Care) →
-> **CEO** 'Acme CEO'(리스크 medium·brandPriority=premium·delegation high) 설정 →
-> Marketing 부서에 **Writer Employee** 배치 → 교육·인증 →
-> 업무 요청 시 **Approval Workflow** 평가(저위험·예산 내 → auto, 고위험 → CEO 승인) →
-> mock 실행 → 성과가 **부서 Health → Company Health Score**로 롤업 →
-> KPI 달성으로 **stage 전이(초기 성장→안정화)** → **Customer Care 부서 재추천**."
+## 4. 수직 슬라이스 (데모 v2 — AI 공동창업자)
+> "**카페** 사장이 가입 → 컨설팅 질문 응답(직원 3·온라인X·시간소모=재고/발주·문제=신규고객·성장=온라인매출) →
+> **AI 진단**: '지금은 마케팅보다 운영 체계 먼저, 그다음 콘텐츠' →
+> **AI 회사 설계(draft)**: Operations(1순위)·Marketing(2순위) + Writer Employee + 추천 Skill →
+> **대표 승인 1번** → **회사 생성 완료**(Company·CEO·부서·직원) →
+> 운영: 업무 요청 → Approval 게이트 → mock 실행 → 성과 → **Health 롤업** →
+> KPI 달성 → **stage 전이(초기성장→안정화) → Customer Care 재추천**."
 
-이 흐름이 동작하면 **CEO 거버넌스 + Approval + Health + Growth + Recommendation**이 한 루프로 살아 움직임을 증명한다.
+이 한 흐름이 **온보딩 + 살아있는 회사**를 한 번에 증명한다.
 
 ## 5. 성공 기준 (DoD)
-- [ ] `npm test` green (기존 19 + Company/CEO/Department/Organization/Approval/Health/Recommendation 신규)
-- [ ] 조직 트리 불변식(단일 루트·사이클 금지·CEO/직원 소속) 테스트 통과
-- [ ] **CEO 거버넌스**가 직원 작동을 바꾼다(리스크/위임에 따른 Approval·가드레일 차이) 검증
-- [ ] **Approval Workflow** 4유형(auto/ceo/dept_head/conditional) 라우팅 검증
-- [ ] 성과 → Department Health → Company Health **롤업** 수치 검증
-- [ ] **AI 조직 추천**이 (업종×단계)별로 다른 조직 + rationale 반환
-- [ ] **Growth 단계 전이 → 재추천** 동작
-- [ ] Brand Memory Company 스코프 동작(기존 테스트 유지)
-- [ ] 데모 v2 + Operator HQ 스냅샷 반영, 새 결정은 ADR로 기록
+- [ ] `npm test` green (기존 19 + 온보딩/진단/추천/생성/조직/Approval/Health 신규)
+- [ ] Customer Journey 상태머신: `created` 이전엔 실제 Company 미생성, `created`는 대표 승인을 반드시 거침
+- [ ] **AI 진단**이 동일 업종이라도 응답에 따라 다른 우선순위 + rationale 반환
+- [ ] **조직 추천**이 (업종×단계×진단)별로 다른 조직 반환(동일 시작 금지)
+- [ ] **회사 자동 생성**: 승인된 draft만 인스턴스화, 트리 불변식 준수
+- [ ] CEO 거버넌스 + Approval 4유형 라우팅 검증
+- [ ] 성과 → Dept Health → Company Health 롤업 + stage 전이→재추천 검증
+- [ ] 데모 v2 + 스냅샷 반영, 새 결정은 ADR로 기록
 
 ## 6. 규모/리스크
-- 규모: 2.5~3.5주(1인+AI). 인메모리라 인프라 리스크 낮음. 신규 패키지 6개로 증가.
-- 리스크: CEO 거버넌스/Health/추천 가중치·규칙은 *가설* → v0 규칙·템플릿 기반·조정 가능. brandId→companyId 마이그레이션은 brand-memory에 국한.
+- 규모: 3~4주(1인+AI). 신규 패키지 ~10개. 인메모리라 인프라 리스크 낮음.
+- 리스크: 진단·추천·Health 규칙/가중치는 *가설* → v0 규칙·템플릿·조정 가능. 범위가 커 **2단계 분할 가능**(2A 온보딩→생성 / 2B 운영 루프).
 
-## 7. CEO 승인 요청
-이 재제안은 [개정 #003](../constitution/AMENDMENT-003-ceo-and-living-organization.md)의 구조 반영분입니다.
-요청: **본 Sprint 2 v2 범위 승인** → 승인 시 도메인 타입 확장부터 구현 착수.
-확인 1건(선택): 데모 seed 업종을 **카페**로 확정할지(또는 효주님 사업군: 콘텐츠/뷰티/카페 중 택1).
+## 7. CEO / CEO Advisor 승인 요청
+이 재제안은 [개정 #004](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md) 반영분입니다.
+요청 사항:
+1. **본 Sprint 2 v3 범위 승인** (또는 2A/2B 분할 여부).
+2. 데모 seed 업종 확정: **카페**(권장) 또는 콘텐츠/뷰티.
+3. **Codex 투입 여부** — CEO Advisor 검토 후 결정(메모 #004). 투입 시 UX는 [ux-screen-structure](../product/ux-screen-structure.md) 기반.
 
 ## 8. 다음 (Sprint 3 예고)
-영속화(Postgres+RLS) → Model Gateway 실제 제공자 1종(원가/ROI 실측) → 이후 Codex의 Next.js UX([ux-screen-structure](../product/ux-screen-structure.md)).
+영속화(Postgres+RLS) → Model Gateway 실제 제공자 1종(원가/ROI 실측, 진단·추천에 LLM 도입 검토) → Codex Next.js UX.
 전체: [roadmap](roadmap.md).

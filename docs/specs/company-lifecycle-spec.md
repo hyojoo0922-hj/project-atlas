@@ -11,8 +11,8 @@
 
 | 단계 | 무엇을 하는가 | 산출/게이트 |
 |---|---|---|
-| **설립 Found** | Company DNA·Culture·**CEO 객체**·Goal 설정 | Company + CEO 생성 |
-| **조직 구성 Organize** | **AI 조직 추천** → Department 정의, 필수 Skill·KPI | Organization 트리 + 부서 KPI |
+| **설립 Found** | **온보딩(AI 컨설팅→진단→자동 설계→대표 승인)**으로 Company·CEO 생성 | Company + CEO 생성 → [Onboarding](../architecture/07-onboarding-architecture.md) |
+| **조직 구성 Organize** | **AI 조직 추천**(진단 기반) → Department 정의, 필수 Skill·KPI | Organization 트리 + 부서 KPI |
 | **채용·배치 Staff** | 직원 채용 → 부서 배치, 교육·인증·배포 | 부서별 Skill 수준 확보 |
 | **운영 Operate** | 업무 수행, Usage/Cost/ROI·성과 측정 | CostLedger·Performance |
 | **성장 Grow** | Employee 승진·Upgrade, 부서 역량 상승, **단계 전이** | Health↑ |

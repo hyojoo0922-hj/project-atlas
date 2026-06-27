@@ -4,10 +4,10 @@
 
 ## 정체성
 
-Project Atlas는 **살아 움직이는 회사를 운영하는 플랫폼**(AI Employee Ecosystem)이다. 고객은 AI 도구를 쓰지 않고 **회사를 운영**한다.
+Project Atlas는 **고객의 AI 공동창업자**다. 가입 = 무료 AI 컨설팅 → 사업 진단 → AI 회사 자동 설계 → 대표 승인 → 회사 생성 → 살아 움직이는 회사 운영.
 계층: **Company → CEO → Department → Employee → Skill** (Company 최상위, CEO는 핵심 객체, Brand Memory는 Company 스코프).
-모든 작업은 헌법 + 개정 [#001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](docs/constitution/AMENDMENT-002-company-centric-organization.md)·[#003](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md)을 따른다(개정이 우선).
-조직 설계: [Organization Architecture](docs/architecture/01-organization-architecture.md) · 정밀 스펙: [`docs/specs/`](docs/specs/README.md).
+모든 작업은 헌법 + 개정 [#001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](docs/constitution/AMENDMENT-002-company-centric-organization.md)·[#003](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md)·[#004](docs/constitution/AMENDMENT-004-ai-cofounder-onboarding.md)을 따른다(개정이 우선).
+조직: [Organization Architecture](docs/architecture/01-organization-architecture.md) · 온보딩: [Onboarding Architecture](docs/architecture/07-onboarding-architecture.md) · 스펙: [`docs/specs/`](docs/specs/README.md).
 
 ## 절대 규칙
 
@@ -20,6 +20,7 @@ Project Atlas는 **살아 움직이는 회사를 운영하는 플랫폼**(AI Emp
 6. **용어 통일.** *Feature*가 아니라 **Employee** 중심 용어 (Writer Feature ❌ / Writer Employee ⭕).
 7. **Skill은 자산.** 즉흥 프롬프트로 만들지 않는다. [Skill 라이프사이클](docs/specs/skill-lifecycle-spec.md) 10단계를 거친다.
 8. **Company가 최상위, CEO는 핵심 객체.** 새 도메인 작업은 Company→CEO→Department→Employee 계층과 Health/KPI 롤업·캐스케이드, CEO 거버넌스, Approval Workflow, 조직 추천을 전제로 설계한다. 확장 가능한 트리 유지. 목표는 "살아 움직이는 회사".
+9. **온보딩이 핵심 경험.** Company는 가입 즉시 만들지 않는다 — 진단→AI 설계→대표 승인을 거친다(고객은 설계하지 않고 승인만). Customer Journey는 독립 설계 대상(상태머신).
 
 ## 이번 Sprint(0) 범위 제한 — 구현 금지
 

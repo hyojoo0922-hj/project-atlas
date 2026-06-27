@@ -1,12 +1,13 @@
 # Project Atlas
 
-> **AI Employee Ecosystem** — 고객은 AI를 *사용*하지 않는다. AI 직원을 *채용*한다.
+> **고객의 AI 공동창업자(AI Co-founder)** — 회사를 만드는 프로그램이 아니라, 사업을 진단하고 회사를 함께 세웁니다.
 
-Project Atlas는 AI 직원(AI Employee)이 **태어나고·배우고·인증받고·일하고·성장하는 생태계**입니다.
-도구(Tool)가 아니라 **직원**을, 기능(Feature)이 아니라 **회사를 운영하는 경험**을 제공합니다.
+Project Atlas는 고객이 가입하면 **무료 AI 컨설팅**으로 사업을 진단하고, **AI가 회사를 설계**하면
+대표는 **승인만** 합니다. 이후 Company→CEO→Department→Employee→Skill이 **살아 움직이는 회사**로 운영됩니다.
+도구(Tool)가 아니라 **회사를 운영하는 경험**을 제공합니다.
 
-> 📌 정의 진화: "AI Workforce OS" → **"AI Employee Ecosystem"** ([#001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)) → **회사를 운영하는 플랫폼** ([#002](docs/constitution/AMENDMENT-002-company-centric-organization.md)) → **살아 움직이는 회사** ([#003](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md)). 모두 CEO 승인.
-> 계층: **Company → CEO → Department → Employee → Skill** (Company 최상위, CEO는 핵심 객체).
+> 📌 정의 진화: AI Employee Ecosystem ([#001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)) → 회사 운영 플랫폼 ([#002](docs/constitution/AMENDMENT-002-company-centric-organization.md)) → 살아 움직이는 회사 ([#003](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md)) → **AI 공동창업자** ([#004](docs/constitution/AMENDMENT-004-ai-cofounder-onboarding.md)). 모두 CEO 승인.
+> 계층: **Company → CEO → Department → Employee → Skill** · 첫 경험: **온보딩 = 무료 AI 컨설팅 → 진단 → 자동 설계 → 대표 승인**.
 > 용어 원칙: *Feature*가 아니라 **Employee** (예: ~~Writer Feature~~ → **Writer Employee**).
 
 ---
@@ -36,6 +37,14 @@ Customer
 **살아있는 루프**: 조직추천(업종×단계) → 구성 → CEO/Approval → 업무·성과 → Health → 성장단계 → 재추천.
 → 조직 설계: [Organization Architecture](docs/architecture/01-organization-architecture.md) · 정밀 스펙: [docs/specs/](docs/specs/README.md)
 
+## 첫 경험 — 온보딩 (Customer Journey)
+
+```
+회원가입(무료 AI 컨설팅) → AI 사업 진단 → AI 회사 설계 → AI 조직/직원/Skill 추천
+        → 대표 승인 → Company 생성 완료 → 살아있는 회사 운영
+```
+고객은 설계하지 않고 **답하고·보고·승인**합니다. → [Onboarding Architecture](docs/architecture/07-onboarding-architecture.md) · [Customer Journey](docs/specs/customer-journey-spec.md)
+
 ## 생태계 기관 (Ecosystem Organs)
 
 직원이 강해지는 시스템을 운영하는 기관들:
@@ -63,7 +72,8 @@ Customer
 - [CLAUDE_FIRST_DIRECTIVE](docs/constitution/CLAUDE_FIRST_DIRECTIVE.md) — 최초 지시
 - ⭐ [AMENDMENT #001 — AI Employee Ecosystem](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md) — CEO 승인 개정
 - ⭐ [AMENDMENT #002 — Company 중심 조직](docs/constitution/AMENDMENT-002-company-centric-organization.md) — CEO 승인 개정
-- ⭐ [AMENDMENT #003 — CEO·살아있는 조직](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md) — CEO 승인 개정(최우선)
+- ⭐ [AMENDMENT #003 — CEO·살아있는 조직](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md) — CEO 승인 개정
+- ⭐ [AMENDMENT #004 — AI 공동창업자·온보딩](docs/constitution/AMENDMENT-004-ai-cofounder-onboarding.md) — CEO 승인 개정(최우선)
 
 ## 현재 상태
 

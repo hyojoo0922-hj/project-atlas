@@ -11,12 +11,15 @@
 ```
 입력:  industry (예: 카페, 이커머스, 뷰티, SaaS …)
        stage    (창업 / 초기 성장 / 안정화 / 확장 / 프랜차이즈)
+       diagnosis ([AI Business Diagnosis] 결과 — 우선순위·firstBuild)  ← 개정 #004
        (선택) CEO 성장전략·브랜드 우선순위 → 가중
 출력:  OrgRecommendation {
-         departments: [{ name, mandate, kpiTemplate, requiredSkills, seedEmployees }],
+         departments: [{ name, mandate, kpiTemplate, requiredSkills, seedEmployees, priority }],
          rationale: string[]    // 왜 이 조직인가(설명 가능)
        }
 ```
+> 개정 #004: 추천은 (업종 × 단계)뿐 아니라 **[AI 사업 진단](ai-business-diagnosis-spec.md) 결과**를 입력으로 받아
+> 부서 *우선순위*를 정한다. 예: 진단 firstBuild=operations → Operations priority 1.
 
 ## 3. 추천 모델 v0 — 템플릿 × 단계 (규칙 기반)
 업종별 **조직 템플릿** + 단계별 **활성화 규칙**의 조합.
@@ -50,6 +53,15 @@ orgTemplate:
 ```
 
 > v0는 **템플릿/규칙 기반·설명 가능**. 데이터 축적 후 학습 기반 추천(v1)은 별도 ADR.
+
+## 3b. AI Organization Recommendation Flow (온보딩 내 — 개정 #004)
+온보딩에서 추천이 호출되는 흐름:
+```
+온보딩 응답 → [AI 사업 진단] → 진단(우선순위) ─▶ Org Recommendation(업종×단계×진단)
+   → 추천 Department(우선순위) → 부서별 추천 Employee → 직원별 추천 Skill
+   → CompanyDesignDraft에 편입 → 대표 승인 → 회사 생성
+```
+→ 상세: [Onboarding Architecture](../architecture/07-onboarding-architecture.md) · [Company Creation Flow](company-creation-flow-spec.md)
 
 ## 4. "살아있는 조직"과의 연결
 ```

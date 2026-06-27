@@ -1,9 +1,12 @@
 # Project Atlas
 
-> **AI Workforce OS** — 고객은 AI를 *사용*하지 않는다. AI 직원을 *채용*한다.
+> **AI Employee Ecosystem** — 고객은 AI를 *사용*하지 않는다. AI 직원을 *채용*한다.
 
-Project Atlas는 기업이 AI 직원(AI Employee)을 채용·교육·배치·관리하는 운영체제(OS)입니다.
+Project Atlas는 AI 직원(AI Employee)이 **태어나고·배우고·인증받고·일하고·성장하는 생태계**입니다.
 도구(Tool)가 아니라 **직원**을, 기능(Feature)이 아니라 **회사를 운영하는 경험**을 제공합니다.
+
+> 📌 정의 업데이트: "AI Workforce OS" → **"AI Employee Ecosystem"** ([헌법 개정 #001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md), CEO 승인).
+> 용어 원칙: *Feature*가 아니라 **Employee** (예: ~~Writer Feature~~ → **Writer Employee**).
 
 ---
 
@@ -16,13 +19,30 @@ Project Atlas는 기업이 AI 직원(AI Employee)을 채용·교육·배치·관
 | 모두에게 같은 기능 | 직원별 적합도 기반 Skill 배포 |
 | 결과물만 남는다 | Brand Memory에 회사 맥락이 누적된다 |
 
-## 3개의 핵심 축
+## Employee = 중심 객체 (1급 시민)
 
-1. **Brand Memory** — 고객/브랜드의 맥락(보이스·자산·제품·정책·이력)을 영속 저장. 모든 직원이 공유하는 기억.
-2. **Skill Library** — 직원이 습득하는 능력의 카탈로그. 발견→인증→배포의 라이프사이클을 가짐.
-3. **Matching Engine** — 직원과 Skill의 적합도를 계산. 모두에게 같은 Skill을 주지 않고, *맞는 직원에게* 배포.
+직원은 "Brand Memory를 가진 AI"가 아니라, 다음 7개를 가진 **독립 객체**입니다:
 
-> 자세한 설계는 [`docs/architecture/00-overview.md`](docs/architecture/00-overview.md) 참조.
+```
+Employee = Employee DNA + Skill Library + Brand Memory
+         + Training History + Certification + Performance History + Matching Profile
+```
+→ 상세: [Employee DNA Specification](docs/specs/employee-dna-spec.md)
+
+## 생태계 기관 (Ecosystem Organs)
+
+직원이 강해지는 시스템을 운영하는 기관들:
+
+| 기관 | 역할 | Skill 라이프사이클 구간 |
+|---|---|---|
+| **AI Research Lab** | Skill 발굴·검증·ROI 분석 | 발견·분석·Sandbox·ROI |
+| **Skill Matching Engine** | 직원별 적합도 배포 | 직원 추천 |
+| **AI University** | 직원 교육·시험 | 교육·시험 |
+| **Certification System** | 자격 인증 | 인증 |
+| **Operator HQ** | 위 기관 + 배포·Skill Update·Employee Upgrade 운영 | 배포·성과측정 |
+
+> Skill은 프롬프트가 아니라 **플랫폼 핵심 자산**이며 10단계 라이프사이클을 가집니다(ROI 분석 포함).
+> 전체 설계: [`docs/architecture/00-overview.md`](docs/architecture/00-overview.md) · 정밀 스펙: [`docs/specs/`](docs/specs/README.md)
 
 ## 설립 헌법 (Source of Truth)
 
@@ -34,6 +54,7 @@ Project Atlas는 기업이 AI 직원(AI Employee)을 채용·교육·배치·관
 - [SKILL_OS_CONSTITUTION](docs/constitution/SKILL_OS_CONSTITUTION.md) — Skill 라이프사이클
 - [CEO_CHARTER](docs/constitution/CEO_CHARTER.md) / [CTO_CHARTER](docs/constitution/CTO_CHARTER.md) — 의사결정 권한
 - [CLAUDE_FIRST_DIRECTIVE](docs/constitution/CLAUDE_FIRST_DIRECTIVE.md) — 최초 지시
+- ⭐ [AMENDMENT #001 — AI Employee Ecosystem](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md) — CEO 승인 개정(최우선)
 
 ## 현재 상태
 
@@ -50,11 +71,12 @@ Project Atlas는 기업이 AI 직원(AI Employee)을 채용·교육·배치·관
 ```
 Project-Atlas/
 ├── docs/                  # Documentation First — 설계의 단일 진실 공급원
-│   ├── constitution/      # 설립 헌법 (불변, 변경은 CEO 승인)
-│   ├── architecture/      # 시스템 아키텍처 (CTO 영역)
+│   ├── constitution/      # 설립 헌법 + 개정(Amendment) (변경은 CEO 승인)
+│   ├── architecture/      # 시스템 아키텍처 — 전체 그림 (CTO 영역)
+│   ├── specs/             # 정밀 스펙: Employee DNA·Skill·Matching·HQ·Lab·University·Cert
 │   ├── product/           # 제품 비전·페르소나·MVP 범위
-│   ├── business/          # 수익모델·기능 게이트
-│   ├── skill-os/          # Skill 라이프사이클 상세
+│   ├── business/          # 수익모델·Employee&Skill 게이트
+│   ├── skill-os/          # Skill 라이프사이클 인덱스
 │   ├── adr/               # Architecture Decision Records
 │   └── sprints/           # Sprint 제안·로드맵
 ├── apps/                  # (골격) 운영자 콘솔 / 고객 포털

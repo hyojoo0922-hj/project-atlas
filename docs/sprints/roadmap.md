@@ -1,15 +1,16 @@
 # 로드맵 (Roadmap)
 
-> 각 단계는 [feature-gate](../business/feature-gate.md)를 통과한 것만 진입. 순서는 가치·리스크 기준.
+> 각 단계는 [Employee/Skill 게이트](../business/employee-skill-gate.md)를 통과한 것만 진입. 순서는 가치·리스크 기준.
+> 개정 #001(AI Employee Ecosystem) 반영 — 생태계 기관(Lab/University/Certification/HQ)을 단계적으로 가동.
 
 | Sprint | 목표 | 핵심 산출 | 금지/제외 해제 |
 |---|---|---|---|
-| **0 — 설립** ✅ | 회사 설립 | 헌법·아키텍처·ADR·로드맵·구조 골격 | (없음) |
-| **1 — 걷는 골격** | 3축 수직 슬라이스(인메모리) | shared-types, Brand Memory v0, Skill Library v0, Matching v0, Gateway mock, Operator Console 골격 | — |
-| **2 — 영속화 & 실원가** | 신뢰할 수 있는 상태 | Postgres+RLS, **Model Gateway 실제 제공자 1종**(원가 실측), 감사 로그 | ✅ AI API (게이트 통과 후) |
-| **3 — 고객 경험 & 과금** | 고객이 직접 쓴다 | Customer Portal, **인증/로그인**, **Credit/Budget 집행**, 과금 모드 | ✅ 로그인 ✅ 결제 |
-| **4 — Skill OS 풀 라이프사이클** | 능력 공급망 가동 | Sandbox 실행, 시험·인증 파이프라인, 성과측정 루프 | — |
-| **5+ — 확장** | 차별화 심화 | Matching v1(학습 랭킹), 멀티 제공자 라우팅 최적화, 직군 확대 | (필요 시) 영상/이미지 — 게이트 통과 시 |
+| **0 — 설립** ✅ | 회사 설립 | 헌법+개정·아키텍처·스펙 7종·ADR·로드맵·구조 골격 | (없음) |
+| **1 — 걷는 골격** | Employee 중심 수직 슬라이스(인메모리) | shared-types(Employee DNA), Brand Memory v0, Skill Library v0(10단계), Matching v0(MatchingProfile), Training/Cert/Perf 모델, Gateway mock, Operator HQ 콘솔 골격 | — |
+| **2 — 영속화 & 실원가** | 신뢰할 수 있는 상태 | Postgres+RLS, **Model Gateway 실제 제공자 1종**(원가 실측·ROI), 감사 로그 | ✅ AI API (게이트 통과 후) |
+| **3 — 고객 경험 & 과금** | 고객이 직접 채용 | Customer Portal, **인증/로그인**, **Credit/Budget 집행**, 과금 모드 | ✅ 로그인 ✅ 결제 |
+| **4 — 생태계 기관 가동** | Skill 공급망 + 직원 성장 | Research Lab(Sandbox 실행·ROI), AI University(교육·시험), Certification 파이프라인, 성과측정→Employee Upgrade 루프 | — |
+| **5+ — 확장** | 차별화 심화 | Matching v1(학습 랭킹), 멀티 제공자 라우팅, 직군(Employee) 확대 | (필요 시) 영상/이미지 — 게이트 통과 시 |
 
 ## 원칙
 - 각 Sprint 시작 전 CTO가 제안 → 중대한 *사업 방향 변경*만 CEO 승인.

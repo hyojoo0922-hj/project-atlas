@@ -9,12 +9,13 @@
 3. **직원별 적합도 배포**가 결과 품질과 신뢰를 높인다.
 
 ## MVP 포함 (In)
-- AI 직원 생성/관리(역할·페르소나·메모리 범위) — *개념/UI 골격*.
+- AI 직원 생성/관리 — **Employee DNA**(genome/phenotype/acquired/lineage) + 메모리 스코프 — *개념/UI 골격*.
 - Brand Memory CRUD + 버전관리(개념).
-- Skill Library 카탈로그 + 라이프사이클 상태 표시.
-- Matching Engine v0(규칙 기반, 설명 가능 점수).
-- Operator Console / Customer Portal 분리.
-- Cost Control 모델: Budget/CostLedger + Model Gateway **인터페이스**.
+- Skill Library 카탈로그 + **10단계 라이프사이클**(ROI 포함) 상태 표시.
+- Matching Engine v0(MatchingProfile 입력, 규칙 기반, 설명 가능 점수).
+- Training/Certification/Performance 레코드 데이터 모델(상태 표현).
+- Operator Console(= Operator HQ 화면) / Customer Portal 분리.
+- Cost Control 모델: Budget/CostLedger + ROI + Model Gateway **인터페이스**.
 
 ## MVP 제외 (Out) — 이번 회사 설립 Sprint 기준
 - ❌ 로그인/인증

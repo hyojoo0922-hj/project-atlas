@@ -15,12 +15,13 @@
 
 ## 가격 레버 (가설)
 - **직원 수(좌석)**: "직원을 더 고용" = 구독 확대. LTV의 핵심.
+- **Employee Upgrade**: 직원이 인증·성과로 성장 → 상위 등급 직원으로 가치 상승.
 - **Brand Memory 용량/이력**: 축적이 깊을수록 이탈 비용↑(해자).
-- **Skill 등급/인증 Skill**: 고급 Skill을 프리미엄으로.
+- **Skill 등급/인증 Skill**: 고급·인증 Skill을 프리미엄으로(자산 가치).
 - **Credit 사용량**: Hosted의 변동 수익.
 
 ## 헌법 게이트와의 연결
-모든 신규 유료 기능은 [feature-gate](feature-gate.md) 4종을 통과해야 가격에 편입.
+모든 신규 **Employee(직군)·Skill**은 [Employee/Skill 게이트](employee-skill-gate.md) 4종 + (Skill은) [ROI 분석](../specs/skill-lifecycle-spec.md)을 통과해야 가격에 편입.
 
 ## 이번 Sprint 경계
 모델만 정의. **결제/청구 연동은 구현하지 않음.** Credit/Budget은 데이터 모델로만 존재.

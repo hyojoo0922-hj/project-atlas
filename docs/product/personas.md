@@ -5,14 +5,16 @@
 - 원하는 것: 복잡함 없이, 일이 *처리*되는 경험. 회사를 운영하는 느낌.
 - 화면: **Customer Portal** (단순). 직원 채용·업무 위임·결과 확인·크레딧 잔액.
 
-## 2. 운영자 (Operator)
-- 누구: Atlas를 운영하며 직원/Skill/예산을 관리하는 주체(내부 또는 고객사 관리자).
-- 원하는 것: 통제와 가시성 — 적합도, 라이프사이클, 원가.
-- 화면: **Operator Console** (복잡 수용). 직원/Skill/예산/원가 대시보드, 라이프사이클 관리.
+## 2. 운영자 (Operator @ Operator HQ)
+- 누구: 직원을 일일이 관리하는 사람이 **아니다.** 생태계를 운영하는 본사(HQ) 주체.
+- 책임: **Skill Library · Training · Certification · Skill Update · Employee Upgrade** 운영(개정 #001 §4).
+- 원하는 것: 통제와 가시성 — 적합도(사유), 라이프사이클, ROI·원가.
+- 화면: **Operator Console** (복잡 수용). → 상세: [Operator HQ Spec](../specs/operator-hq-spec.md).
 
-## 3. AI 직원 (AI Employee) — 1급 개념
-- 사람이 아니지만 시스템의 핵심 행위자. 역할·페르소나·메모리 범위·가드레일·예산을 가진다.
-- 사용자가 아니라 **제품이 제공하는 가치 그 자체**.
+## 3. AI 직원 (AI Employee) — 중심 객체(1급 시민)
+- 사람이 아니지만 시스템의 핵심 행위자이자 **제품이 제공하는 가치 그 자체**.
+- 독립 객체: DNA + Skill Library + Brand Memory + Training History + Certification + Performance + Matching Profile.
+- → 상세: [Employee DNA Spec](../specs/employee-dna-spec.md).
 
 ## 4. 의사결정자 (CEO / CTO) — 거버넌스
 - CEO: 무엇을 만들지 ([CEO_CHARTER](../constitution/CEO_CHARTER.md)).

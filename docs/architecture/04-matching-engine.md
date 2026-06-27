@@ -1,6 +1,8 @@
 # 04 — Matching Engine
 
 > 헌법: "Skill은 직원별 적합도를 계산하여 배포한다. 모든 직원에게 동일한 Skill을 적용하지 않는다."
+> 📌 정밀 스펙: [Skill Matching Engine Specification](../specs/skill-matching-engine-spec.md).
+> 입력은 [Employee DNA](../specs/employee-dna-spec.md)에서 파생된 **MatchingProfile**(DNA + Training + Certification + Performance)이다.
 
 Matching Engine은 (Employee × SkillVersion) 적합도(fit score)를 계산해
 **누구에게 어떤 Skill을 배포할지**를 결정하는 컴포넌트다. Atlas의 "차별적 능력 배포"를 강제한다.

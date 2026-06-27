@@ -35,7 +35,7 @@ Employee 성과 → Dept Health → Company Health (상향: 건강 롤업)
 ## 5. 운영 액션 연동 (Operator HQ)
 - At-Risk 부서 식별 → 교육/충원/재편.
 - Goal Alignment 낮음 → KPI 재설정(캐스케이드 정렬).
-- Governance Friction 높음 → Approval Policy/CEO Style 재검토.
+- Governance Friction 높음 → [CEO](ceo-spec.md) 의사결정 스타일/[Approval Workflow](approval-workflow-spec.md) 재검토.
 
 ## 6. 불변식
 - 직접 수정 불가(파생). 모든 갱신은 롤업으로만.

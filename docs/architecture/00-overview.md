@@ -3,8 +3,8 @@
 > CTO 영역. 헌법([constitution](../constitution/))을 구현 가능한 시스템으로 번역한 문서.
 
 > ⭐ [개정 #001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md): Atlas는 **AI Employee Ecosystem**.
-> ⭐ [개정 #002](../constitution/AMENDMENT-002-company-centric-organization.md): 최상위 객체는 **Company**. 계층 = **Company → Department → Employee → Skill**.
-> Atlas는 직원 관리 프로그램이 아니라 **회사를 운영하는 플랫폼**이다. 조직 상위 그림: [01-organization-architecture.md](01-organization-architecture.md).
+> ⭐ [개정 #002](../constitution/AMENDMENT-002-company-centric-organization.md)·[#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md): 최상위는 **Company**, 계층 = **Company → CEO → Department → Employee → Skill**.
+> Atlas는 회사를 운영하는 플랫폼이며 목표는 회사가 **살아 움직이는 것**(Approval·Growth·Health·Recommendation 연결). 조직 상위 그림: [01-organization-architecture.md](01-organization-architecture.md).
 
 ## 1. 한 문장 정의
 
@@ -15,21 +15,25 @@ Project Atlas는 **Company(회사)**를 운영하는 플랫폼이다 — **Depar
 ## 2. 핵심 도메인 모델 (개념)
 
 ```
-Customer ──owns──> Company  ★최상위
-                     │ (DNA·Culture·CEO Style·Approval·Goal·KPI·Health · Brand Memory · Organization)
+Customer ──owns──> Company  ★최상위 (DNA·Culture·Goal·KPI·Stage·Health · Brand Memory · Organization)
                      │
+                     ├──led by──> CEO  ★(DNA·의사결정·승인정책·리스크·브랜드우선·성장전략·Goal·KPI·권한)
+                     │                 └── governs ──▶ (직원 작동 방식 지배)
                      └──has──> Department ──staffs──> Employee ──assigned──> SkillAssignment
                                   │(DNA·KPI·필수Skill·Health)   │(DNA·rank·성장)        │
                                   └── 필수 Skill ↔ 현재 수준     │                       │
 Skill Library ──catalog──> Skill ──versions──> SkillVersion ──(10단계 lifecycle)─────────┘
                                                    │
 Task/Run ──executes──> SkillVersion ──meters──> CostLedger
+Approval Workflow ──gates──> {deploy, budgetOver, highRisk}   (auto/CEO/부서장/조건부)
 
 롤업:  Employee 성과 → Department Health → Company Health Score
-캐스케이드: Company Goal → Company KPI → Department KPI → Employee 성과
+캐스케이드: CEO 성장전략/Goal → Company Goal → KPI → Department KPI → Employee 성과
+살아있는 루프: 조직추천 → 구성 → CEO 거버넌스/Approval → 업무·성과 → Health → Growth 단계 → 재추천
 ```
 
-- **Company (최상위 객체)**: 회사 그 자체. DNA·문화·CEO Style·승인정책·목표·KPI·건강 + Brand Memory + Organization. → [Company DNA Spec](../specs/company-dna-spec.md)
+- **Company (최상위 객체)**: 회사 그 자체. DNA·문화·목표·KPI·단계·건강 + Brand Memory + Organization. → [Company DNA Spec](../specs/company-dna-spec.md)
+- **CEO (핵심 객체)**: 의사결정·승인·리스크·브랜드우선·성장전략·권한. 직원 작동을 지배(같은 직원도 CEO에 따라 다르게). → [CEO Spec](../specs/ceo-spec.md)
 - **Department (독립 객체, 성장)**: 담당 업무·KPI·필수Skill·현재수준·Health·Performance. → [Department Spec](../specs/department-spec.md)
 - **Employee (중심 객체)**: Department 소속. DNA + Skill + 기억 + Training + Certification + Performance + Matching Profile + rank. → [Employee DNA Spec](../specs/employee-dna-spec.md)
 - **Skill (핵심 자산)**: 검증·인증을 거친 자산. 10단계 라이프사이클(ROI 포함). → [Skill Lifecycle Spec](../specs/skill-lifecycle-spec.md)
@@ -37,9 +41,10 @@ Task/Run ──executes──> SkillVersion ──meters──> CostLedger
 
 ## 3. 핵심 서브시스템
 
-### (A0) Organization — 조직 (개정 #002)
-- Company→Department→Employee 트리. Company DNA·문화·목표·KPI·Health.
-- 상세: [`01-organization-architecture.md`](01-organization-architecture.md) · [Company DNA](../specs/company-dna-spec.md) · [Department](../specs/department-spec.md)
+### (A0) Organization — 조직 (개정 #002·#003)
+- Company→**CEO**→Department→Employee 트리. Company DNA·문화·목표·KPI·단계·Health.
+- **CEO**가 거버넌스 지배, **Approval Workflow**가 액션 승인, **AI 조직 추천**이 (업종×단계) 조직 제안.
+- 상세: [`01-organization-architecture.md`](01-organization-architecture.md) · [Company](../specs/company-dna-spec.md) · [CEO](../specs/ceo-spec.md) · [Department](../specs/department-spec.md) · [Approval](../specs/approval-workflow-spec.md) · [Recommendation](../specs/org-recommendation-spec.md)
 
 ### (A) Brand Memory — 공유 기억 (Company 스코프)
 - 브랜드 보이스, 제품/서비스, 자산, 정책, 과거 산출물, 의사결정 이력을 구조화·버전관리하여 저장.

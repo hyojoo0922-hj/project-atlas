@@ -4,13 +4,17 @@
 > 아키텍처(`../architecture/`)가 "전체 그림"이라면, 스펙은 각 핵심 객체/기관의 "정밀 설계"다.
 > 계층: **Company → Department → Employee → Skill** ([Organization Architecture](../architecture/01-organization-architecture.md)).
 
-## 조직 객체 (Company 중심 — 개정 #002)
-- [Company DNA Specification](company-dna-spec.md) — 최상위 객체, DNA·문화·CEO Style·승인정책·목표·KPI·건강
+## 조직 객체 (Company 중심 — 개정 #002·#003)
+계층: **Company → CEO → Department → Employee → Skill**
+- [Company DNA Specification](company-dna-spec.md) — 최상위 객체, DNA·문화·목표·KPI·단계·건강
+- [CEO Specification](ceo-spec.md) — 핵심 객체, 의사결정·승인·리스크·브랜드우선·성장전략·권한
+- [Approval Workflow Specification](approval-workflow-spec.md) — 자동/CEO/부서장/조건부 승인(독립 구조)
+- [AI Organization Recommendation](org-recommendation-spec.md) — (업종×단계) 조직 추천
 - [Department Specification](department-spec.md) — 독립 객체(성장), DNA·KPI·필수Skill·현재수준·Health
-- [Organization Tree Specification](organization-tree-spec.md) — 확장 가능한 조직 트리
+- [Organization Tree Specification](organization-tree-spec.md) — 확장 가능한 조직 트리(company/ceo/department/employee)
 - [Company Health Specification](company-health-spec.md) — 회사 건강(최상위 롤업)
 - [Department Health Specification](department-health-spec.md) — 부서 건강(롤업)
-- [Company Lifecycle](company-lifecycle-spec.md) — 설립→구성→운영→성장→재편
+- [Company Lifecycle](company-lifecycle-spec.md) — 운영 단계 + 성장 단계(창업~프랜차이즈) + 살아있는 루프
 
 ## 중심 객체 (직원)
 - [Employee DNA Specification](employee-dna-spec.md) — Department 소속, 7개 구성요소·4개 DNA 레이어·승진/성장 루프

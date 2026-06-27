@@ -3,9 +3,9 @@
 이 폴더는 Project Atlas의 **단일 진실 공급원**이다. 코드보다 문서가 먼저다.
 
 ## 길잡이
-- 🏛️ **헌법 + 개정** — [`constitution/`](constitution/) · ⭐[#001 Employee Ecosystem](constitution/AMENDMENT-001-ai-employee-ecosystem.md) · ⭐[#002 Company 중심](constitution/AMENDMENT-002-company-centric-organization.md)
+- 🏛️ **헌법 + 개정** — [`constitution/`](constitution/) · ⭐[#001](constitution/AMENDMENT-001-ai-employee-ecosystem.md) · ⭐[#002](constitution/AMENDMENT-002-company-centric-organization.md) · ⭐[#003 CEO·살아있는 조직](constitution/AMENDMENT-003-ceo-and-living-organization.md)
 - 🧭 **아키텍처** — [00 개요](architecture/00-overview.md) · [01 조직 아키텍처](architecture/01-organization-architecture.md)
-- 🔬 **정밀 스펙** — [`specs/`](specs/README.md): Company·Department·Organization·Health + Employee·Skill·Matching·HQ·Lab·University·Cert
+- 🔬 **정밀 스펙** — [`specs/`](specs/README.md): Company·CEO·Approval·Recommendation·Department·Organization·Health + Employee·Skill·Matching·HQ·Lab·University·Cert
 - 🎯 **제품** — [`product/vision.md`](product/vision.md), [`product/mvp-scope.md`](product/mvp-scope.md)
 - 💰 **사업** — [`business/employee-skill-gate.md`](business/employee-skill-gate.md), [`business/monetization.md`](business/monetization.md)
 - 🧩 **Skill OS** — [`architecture/03-skill-os.md`](architecture/03-skill-os.md)

@@ -10,7 +10,10 @@ Operator HQ는 Atlas의 **본사(Headquarters)**다. 개별 직원의 일상 업
 ## 2. 운영자의 책임 (조직 전체)
 | 책임 | 무엇을 하는가 | 연동 |
 |---|---|---|
-| **Company 운영** | DNA·Culture·CEO Style·Approval Policy·Goal·KPI·Health 관리 | [Company DNA](company-dna-spec.md) |
+| **Company 운영** | DNA·Culture·Goal·KPI·Stage·Health 관리 | [Company DNA](company-dna-spec.md) |
+| **CEO 운영** | CEO 객체·의사결정 스타일·권한·성장 전략 설정 | [CEO Spec](ceo-spec.md) |
+| **Approval 운영** | Approval Workflow 규칙·승인 요청 처리 | [Approval Workflow](approval-workflow-spec.md) |
+| **조직 추천 운영** | (업종×단계) 조직 추천 검토·채택 | [Org Recommendation](org-recommendation-spec.md) |
 | **Department 운영** | 부서 신설/재편, KPI·필수Skill 설정, Department Health 관리 | [Department](department-spec.md) |
 | **Employee 운영** | 채용·부서 배치·승진·Upgrade 승인 | [Employee DNA](employee-dna-spec.md) |
 | **Skill Library 운영** | Skill 자산 카탈로그·버전·상태 관리 | [Skill Lifecycle](skill-lifecycle-spec.md) |

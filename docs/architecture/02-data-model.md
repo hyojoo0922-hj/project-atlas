@@ -9,13 +9,25 @@
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
 | `Customer` | id, name, plan(Hosted/BYOK/Credit), status | 과금 주체 |
-| `Company` | id, customer_id, name, status, **dna, culture, ceoStyle, approvalPolicy, goal, kpi[], healthScore** | **최상위 운영 객체** → [Company DNA](../specs/company-dna-spec.md) |
+| `Company` | id, customer_id, name, status, **dna, culture, goal, kpi[], stage, healthScore, ceo_id** | **최상위 운영 객체** → [Company DNA](../specs/company-dna-spec.md) |
+
+### CEO (핵심 객체 — 개정 #003)
+| 엔티티 | 핵심 필드 | 비고 |
+|---|---|---|
+| `CEO` | id, company_id, dna, decisionStyle, riskAppetite, brandPriority[], growthStrategy, goal, kpi[], authority, approvalWorkflow_id | 직원 작동 지배 → [CEO Spec](../specs/ceo-spec.md) |
+
+### Approval (독립 구조 — 개정 #003)
+| 엔티티 | 핵심 필드 | 비고 |
+|---|---|---|
+| `ApprovalWorkflow` | id, company_id, rules[] (when→decision: auto/ceo/dept_head/conditional) | → [Approval Workflow Spec](../specs/approval-workflow-spec.md) |
+| `ApprovalRequest` | id, action, context, resolvedDecision, status, approver | 런타임 승인 인스턴스 |
 
 ### Department (독립 객체, 성장)
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
-| `Department` | id, company_id, name, dna, mandate, kpi[], requiredSkills[], skillLevel{}, health, performance | → [Department Spec](../specs/department-spec.md) |
-| `OrgNode` | id, company_id, kind(company/department/employee), refId, parentId, children[] | 조직 트리 → [Organization Tree Spec](../specs/organization-tree-spec.md) |
+| `Department` | id, company_id, name, dna, mandate, kpi[], requiredSkills[], skillLevel{}, health, performance, lead_employee_id | → [Department Spec](../specs/department-spec.md) |
+| `OrgNode` | id, company_id, kind(company/**ceo**/department/employee), refId, parentId, children[] | 조직 트리 → [Organization Tree Spec](../specs/organization-tree-spec.md) |
+| `OrgRecommendation` | id, industry, stage, departments[], rationale[] | (업종×단계) 조직 추천 → [Org Recommendation Spec](../specs/org-recommendation-spec.md) |
 
 ### Brand Memory (해자 — Company 스코프)
 | 엔티티 | 핵심 필드 | 비고 |
@@ -62,8 +74,9 @@
 
 ```
 Customer 1─* Company
+Company 1─1 CEO ; Company 1─1 ApprovalWorkflow ; ApprovalWorkflow 1─* ApprovalRequest
 Company 1─1 CompanyDNA ; Company 1─* BrandMemory 1─* MemoryRevision
-Company 1─* Department ; Company 1─* OrgNode(트리)
+Company 1─* Department ; Company 1─* OrgNode(트리: company/ceo/department/employee)
 Department 1─* Employee
 Employee 1─1 EmployeeDNA ; Employee 1─1 MatchingProfile
 Employee 1─* SkillAssignment *─1 SkillVersion *─1 Skill
@@ -72,9 +85,10 @@ Employee 1─* Run *─1 Task ; Run 1─1 PerformanceRecord ; Run 1─1 CostLedg
 Budget 1─* CostLedger(scope: employee/department/company)
 ```
 
-> **캐스케이드**: Company Goal → Company KPI → Department KPI → Employee 성과.
+> **캐스케이드**: CEO 성장전략/Goal → Company Goal → Company KPI → Department KPI → Employee 성과.
 > **롤업**: Employee Performance → Department Health/Performance → Company Health Score.
-> **성장 루프**: 성과/Certification → MatchingProfile 갱신 → 새 SkillAssignment 추천 → Employee Upgrade/승진 → Department skillLevel↑.
+> **거버넌스**: CEO(스타일·리스크·브랜드우선) × Employee DNA → 직원 작동 방식. 액션은 Approval Workflow 게이트.
+> **살아있는 루프**: 조직추천(업종×단계) → 구성 → CEO/Approval → 업무·성과 → Health → Growth 단계 전이 → 재추천.
 
 ## 설계 노트
 - 식별자는 ULID/UUID 가정. 멀티테넌시는 `brand_id`/`customer_id`로 격리 (RLS 후보).

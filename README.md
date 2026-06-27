@@ -5,8 +5,8 @@
 Project Atlas는 AI 직원(AI Employee)이 **태어나고·배우고·인증받고·일하고·성장하는 생태계**입니다.
 도구(Tool)가 아니라 **직원**을, 기능(Feature)이 아니라 **회사를 운영하는 경험**을 제공합니다.
 
-> 📌 정의 업데이트: "AI Workforce OS" → **"AI Employee Ecosystem"** ([개정 #001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)) → **회사를 운영하는 플랫폼** ([개정 #002](docs/constitution/AMENDMENT-002-company-centric-organization.md)). 모두 CEO 승인.
-> 계층: **Company → Department → Employee → Skill** (Company가 최상위 객체).
+> 📌 정의 진화: "AI Workforce OS" → **"AI Employee Ecosystem"** ([#001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)) → **회사를 운영하는 플랫폼** ([#002](docs/constitution/AMENDMENT-002-company-centric-organization.md)) → **살아 움직이는 회사** ([#003](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md)). 모두 CEO 승인.
+> 계층: **Company → CEO → Department → Employee → Skill** (Company 최상위, CEO는 핵심 객체).
 > 용어 원칙: *Feature*가 아니라 **Employee** (예: ~~Writer Feature~~ → **Writer Employee**).
 
 ---
@@ -26,12 +26,14 @@ Atlas는 회사를 운영하는 플랫폼입니다. 모든 계층이 DNA·목표
 
 ```
 Customer
-└─ Company   ★최상위 (DNA·Culture·CEO Style·Approval·Goal·KPI·Health · Brand Memory · Organization)
+└─ Company   ★최상위 (DNA·Culture·Goal·KPI·Stage·Health · Brand Memory · Organization)
+   ├─ CEO     ★핵심 객체 (DNA·의사결정·승인정책·리스크·브랜드우선·성장전략·Goal·KPI·권한)
    └─ Department  (DNA·KPI·필수Skill·현재수준·Health, 성장)
       └─ Employee (DNA·Skill·Training·Cert·Performance·MatchingProfile·rank, 성장)
          └─ Skill (적합도+인증 기반)
 ```
-캐스케이드 `Goal→KPI→Dept KPI→직원성과` · 롤업 `직원성과→Dept Health→Company Health`.
+캐스케이드 `CEO전략→Company Goal→KPI→Dept KPI→직원성과` · 롤업 `직원성과→Dept Health→Company Health`.
+**살아있는 루프**: 조직추천(업종×단계) → 구성 → CEO/Approval → 업무·성과 → Health → 성장단계 → 재추천.
 → 조직 설계: [Organization Architecture](docs/architecture/01-organization-architecture.md) · 정밀 스펙: [docs/specs/](docs/specs/README.md)
 
 ## 생태계 기관 (Ecosystem Organs)
@@ -60,7 +62,8 @@ Customer
 - [CEO_CHARTER](docs/constitution/CEO_CHARTER.md) / [CTO_CHARTER](docs/constitution/CTO_CHARTER.md) — 의사결정 권한
 - [CLAUDE_FIRST_DIRECTIVE](docs/constitution/CLAUDE_FIRST_DIRECTIVE.md) — 최초 지시
 - ⭐ [AMENDMENT #001 — AI Employee Ecosystem](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md) — CEO 승인 개정
-- ⭐ [AMENDMENT #002 — Company 중심 조직](docs/constitution/AMENDMENT-002-company-centric-organization.md) — CEO 승인 개정(최우선)
+- ⭐ [AMENDMENT #002 — Company 중심 조직](docs/constitution/AMENDMENT-002-company-centric-organization.md) — CEO 승인 개정
+- ⭐ [AMENDMENT #003 — CEO·살아있는 조직](docs/constitution/AMENDMENT-003-ceo-and-living-organization.md) — CEO 승인 개정(최우선)
 
 ## 현재 상태
 

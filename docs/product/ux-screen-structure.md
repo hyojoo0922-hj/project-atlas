@@ -16,26 +16,26 @@
 ### 화면 맵 (개정 #002 — Company 중심)
 ```
 Operator HQ
-├─ Company Dashboard    Company Health Score · Goal/KPI 달성 · 승인 대기(Approval)
-├─ Organization         Company→Department→Employee 트리 · 재편(reorg)
+├─ Company Dashboard    Company Health Score · Goal/KPI · 성장 단계(Stage)
+├─ CEO                  CEO DNA·의사결정 스타일·리스크·브랜드 우선순위·성장 전략·권한
+├─ Approvals            승인 대기(ApprovalRequest) · Workflow 규칙(auto/ceo/dept_head/conditional)
+├─ Org Recommendation   (업종×단계) 추천 조직 + rationale · 채택
+├─ Organization         Company→CEO→Department→Employee 트리 · 재편(reorg)
 ├─ Departments          부서 목록 → 부서 상세
 │   └─ Department Detail Health·KPI·필수Skill 대비 현재 수준(gap)·소속 직원·Performance
 ├─ Employees            직원 목록 → 직원 상세
 │   └─ Employee Detail  DNA(4레이어)·rank·보유 Skill·인증·성과·MatchingProfile
 ├─ Skill Library        Skill 자산 카탈로그 → 라이프사이클 보드(10단계)·ROI
-│   └─ Skill Detail     매니페스트·버전·ROI·배포된 직원
 ├─ Matching             직원별 추천(적합도 + breakdown + 사유)
-├─ University           교육/시험 파이프라인(TrainingRecord·점수)
-├─ Certification        인증 발급/만료/회수
-├─ Research Lab         Skill 발굴·ROI 우선순위
+├─ University · Certification · Research Lab
 └─ Cost & ROI           CostLedger(회사/부서/직원/Skill별)·예산
 ```
 
 ### 핵심 사용자 흐름 (운영자)
-1. Company Dashboard에서 Company Health·KPI 확인 → At-Risk 부서 식별.
-2. Department Detail에서 필수Skill 대비 gap 확인 → 교육/충원/재편 결정.
-3. Matching에서 직원별 추천 → University 교육·시험 → Certification 인증.
-4. 배치 후 Cost & ROI·Health 롤업 모니터링 → Skill Update / Employee Upgrade / 부서 재편 판단.
+1. 가입 시 **Org Recommendation**으로 (업종×단계) 조직을 받아 채택 → CEO·부서·직원 구성.
+2. Company Dashboard에서 Health·KPI·Stage 확인 → At-Risk 부서 식별.
+3. Department Detail에서 필수Skill gap 확인 → University 교육·Certification 인증.
+4. 업무 실행은 **Approvals**(CEO 거버넌스/Workflow)를 거침 → Health 롤업·성장 단계 전이 모니터링 → 재추천·재편.
 
 ---
 

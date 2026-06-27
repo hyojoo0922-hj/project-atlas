@@ -1,29 +1,37 @@
 # 02 — 데이터 모델 (개념 스키마)
 
-> 개념 모델. 이번 Sprint에 DB/마이그레이션을 만들지 않는다. Sprint 1에서 영속 계층을 구현한다.
+> 개념 모델. 계층 = **Company → Department → Employee → Skill** (개정 #002, [ADR 0007](../adr/0007-company-centric-architecture.md)).
+> 영속 계층(Postgres+RLS)은 Sprint 2에서 구현. Sprint 1은 인메모리.
 
 ## 핵심 엔티티
 
-### Customer / Brand
+### Customer / Company (최상위)
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
-| `Customer` | id, name, plan(Hosted/BYOK/Credit), status | 결제 주체 (구현은 후속) |
-| `Brand` | id, customer_id, name, locale | 하나의 고객이 다수 브랜드 보유 가능 |
+| `Customer` | id, name, plan(Hosted/BYOK/Credit), status | 과금 주체 |
+| `Company` | id, customer_id, name, status, **dna, culture, ceoStyle, approvalPolicy, goal, kpi[], healthScore** | **최상위 운영 객체** → [Company DNA](../specs/company-dna-spec.md) |
 
-### Brand Memory (해자)
+### Department (독립 객체, 성장)
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
-| `BrandMemory` | id, brand_id, kind, key, value(jsonb), version, source | kind: voice / product / asset / policy / history / decision |
-| `MemoryRevision` | id, memory_id, version, diff, author, created_at | 손실 없는 버전관리 |
+| `Department` | id, company_id, name, dna, mandate, kpi[], requiredSkills[], skillLevel{}, health, performance | → [Department Spec](../specs/department-spec.md) |
+| `OrgNode` | id, company_id, kind(company/department/employee), refId, parentId, children[] | 조직 트리 → [Organization Tree Spec](../specs/organization-tree-spec.md) |
 
-> Brand Memory는 **append-friendly + versioned**. 직원이 바뀌어도 회사의 기억은 남는다.
+### Brand Memory (해자 — Company 스코프)
+| 엔티티 | 핵심 필드 | 비고 |
+|---|---|---|
+| `BrandMemory` | id, **company_id**, kind, key, value(jsonb), version | kind: voice/product/asset/policy/history/decision |
+| `MemoryRevision` | id, memory_id, version, value, author | 손실 없는 버전관리 |
+
+> Brand Memory는 이제 **Company 스코프** — 회사의 모든 부서/직원이 공유. append-friendly + versioned.
+> (Sprint 1 코드는 brand_id 기반 → Sprint 2에서 company_id로 마이그레이션, [ADR 0007](../adr/0007-company-centric-architecture.md).)
 
 ### Employee (AI 직원 — 중심 객체)
 > 직원은 독립 객체다. 7개 구성요소를 가진다. → [Employee DNA Spec](../specs/employee-dna-spec.md)
 
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
-| `Employee` | id, brand_id, memory_scope, guardrails, budget_id, matching_profile_id | 집계 루트 |
+| `Employee` | id, **company_id, department_id, rank**, memory_scope, guardrails, budget_id, matching_profile_id | Department 소속(개정 #002) |
 | `EmployeeDNA` | employee_id, genome(불변), phenotype, acquired, lineage[] | 4개 레이어(코어/발현/획득/계보) |
 | `MatchingProfile` | id, employee_id, role_family, traits, signals(파생) | Matching Engine 입력(DNA+이력 파생) |
 | `TrainingRecord` | id, employee_id, skill_version_id, status, score | ④ Training History (AI University) |
@@ -44,25 +52,29 @@
 ### 실행 & 비용
 | 엔티티 | 핵심 필드 | 비고 |
 |---|---|---|
-| `Task` | id, brand_id, requested_by, intent, status | 고객/운영자가 맡긴 업무 |
+| `Task` | id, company_id, requested_by, intent, status | 고객/운영자가 맡긴 업무 |
 | `Run` | id, task_id, employee_id, skill_version_id, status, started_at | 1회 실행 |
-| `CostLedger` | id, run_id, provider, model, tokens_in/out, cost, billing_mode | 모든 호출 미터링 |
-| `Budget` | id, scope(employee/brand/customer), limit, period, spent | 예산 강제 |
+| `CostLedger` | id, run_id, provider, model, tokens_in/out, cost, billing_mode, roi_delivered | 모든 호출 미터링 |
+| `Budget` | id, scope(employee/department/company), limit, period, spent | 예산 강제(부서/회사 단위 추가) |
 | `AuditEvent` | id, actor, action, target, payload, created_at | 보안·감사 |
 
 ## 관계 요약
 
 ```
-Customer 1─* Brand 1─* BrandMemory 1─* MemoryRevision
-Brand 1─* Employee
+Customer 1─* Company
+Company 1─1 CompanyDNA ; Company 1─* BrandMemory 1─* MemoryRevision
+Company 1─* Department ; Company 1─* OrgNode(트리)
+Department 1─* Employee
 Employee 1─1 EmployeeDNA ; Employee 1─1 MatchingProfile
 Employee 1─* SkillAssignment *─1 SkillVersion *─1 Skill
 Employee 1─* TrainingRecord ; Employee 1─* Certification ; Employee 1─* PerformanceRecord
-Employee 1─* Run *─1 Task ; Run 1─1 PerformanceRecord
-Run 1─1 CostLedger ; Budget 1─* CostLedger(scope)
+Employee 1─* Run *─1 Task ; Run 1─1 PerformanceRecord ; Run 1─1 CostLedger
+Budget 1─* CostLedger(scope: employee/department/company)
 ```
 
-> 성장 루프: PerformanceRecord/Certification → MatchingProfile 갱신 → 새 SkillAssignment 추천 → Employee Upgrade(DNA.acquired+lineage).
+> **캐스케이드**: Company Goal → Company KPI → Department KPI → Employee 성과.
+> **롤업**: Employee Performance → Department Health/Performance → Company Health Score.
+> **성장 루프**: 성과/Certification → MatchingProfile 갱신 → 새 SkillAssignment 추천 → Employee Upgrade/승진 → Department skillLevel↑.
 
 ## 설계 노트
 - 식별자는 ULID/UUID 가정. 멀티테넌시는 `brand_id`/`customer_id`로 격리 (RLS 후보).

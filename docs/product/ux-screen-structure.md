@@ -13,25 +13,29 @@
 
 ## A. Operator HQ (운영자)
 
-### 화면 맵
+### 화면 맵 (개정 #002 — Company 중심)
 ```
 Operator HQ
-├─ Dashboard            직원 수·Skill 상태 분포·Usage/Cost/ROI 요약
+├─ Company Dashboard    Company Health Score · Goal/KPI 달성 · 승인 대기(Approval)
+├─ Organization         Company→Department→Employee 트리 · 재편(reorg)
+├─ Departments          부서 목록 → 부서 상세
+│   └─ Department Detail Health·KPI·필수Skill 대비 현재 수준(gap)·소속 직원·Performance
 ├─ Employees            직원 목록 → 직원 상세
-│   └─ Employee Detail  DNA(genome/phenotype/acquired/lineage) · 보유 Skill · 인증 · 성과 · MatchingProfile
-├─ Skill Library        Skill 자산 카탈로그 → 라이프사이클 보드(10단계) · ROI
-│   └─ Skill Detail     매니페스트 · 버전 · ROI · 배포된 직원
+│   └─ Employee Detail  DNA(4레이어)·rank·보유 Skill·인증·성과·MatchingProfile
+├─ Skill Library        Skill 자산 카탈로그 → 라이프사이클 보드(10단계)·ROI
+│   └─ Skill Detail     매니페스트·버전·ROI·배포된 직원
 ├─ Matching             직원별 추천(적합도 + breakdown + 사유)
 ├─ University           교육/시험 파이프라인(TrainingRecord·점수)
 ├─ Certification        인증 발급/만료/회수
-└─ Cost & ROI           CostLedger(직원/Skill/브랜드별), 예산
+├─ Research Lab         Skill 발굴·ROI 우선순위
+└─ Cost & ROI           CostLedger(회사/부서/직원/Skill별)·예산
 ```
 
 ### 핵심 사용자 흐름 (운영자)
-1. Skill Library에서 자산 라이프사이클 진행상황 확인(발견→…→ROI→recommended).
-2. Matching에서 직원별 추천을 보고 교육 대상 선정.
-3. University에서 교육·시험 → Certification에서 인증 발급.
-4. 배치 후 Cost & ROI에서 성과·원가 모니터링 → Skill Update / Employee Upgrade 판단.
+1. Company Dashboard에서 Company Health·KPI 확인 → At-Risk 부서 식별.
+2. Department Detail에서 필수Skill 대비 gap 확인 → 교육/충원/재편 결정.
+3. Matching에서 직원별 추천 → University 교육·시험 → Certification 인증.
+4. 배치 후 Cost & ROI·Health 롤업 모니터링 → Skill Update / Employee Upgrade / 부서 재편 판단.
 
 ---
 
@@ -39,12 +43,14 @@ Operator HQ
 
 ### 화면 맵
 ```
-Customer Workspace
-├─ My Employees     채용한 AI 직원(근무 상태) — 복잡성 비노출
-├─ Delegate Work    직원에게 업무 위임(자연어 intent)
-├─ Results          맡긴 업무의 결과
-└─ Credits          크레딧 잔액/사용량 (단순)
+Customer Workspace (= 내 회사)
+├─ My Company      회사 개요(직원·부서는 단순 요약, Health/KPI 내부수치 비노출)
+├─ My Employees    채용한 AI 직원(근무 상태) — Skill OS 복잡성 비노출
+├─ Delegate Work   직원에게 업무 위임(자연어 intent)
+├─ Results         맡긴 업무의 결과
+└─ Credits         크레딧 잔액/사용량 (단순)
 ```
+> 고객은 "내 회사"를 느끼되, Department/Skill 라이프사이클/Health 공식 등 운영 복잡성은 보지 않는다.
 
 ### 핵심 사용자 흐름 (고객)
 1. AI 직원을 채용(또는 추천된 직원 선택).

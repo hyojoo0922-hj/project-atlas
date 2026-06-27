@@ -1,7 +1,8 @@
 # Employee DNA Specification
 
-> 근거: [헌법 개정 #001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md) · [ADR 0005](../adr/0005-ai-employee-ecosystem-pivot.md)
-> Employee는 Atlas의 **중심 객체(1급 시민)**다. 본 문서는 그 구성·생애·진화를 정의한다.
+> 근거: 개정 [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](../constitution/AMENDMENT-002-company-centric-organization.md) · [ADR 0005](../adr/0005-ai-employee-ecosystem-pivot.md)/[0007](../adr/0007-company-centric-architecture.md)
+> Employee는 Atlas의 핵심 객체이며, 개정 #002에 따라 **Department에 소속**된다.
+> 계층: Company → Department → **Employee** → Skill ([Organization Architecture](../architecture/01-organization-architecture.md)).
 
 ## 1. Employee란 무엇인가
 Employee는 "Brand Memory를 가진 AI"가 아니다. 다음 7개 구성요소를 가진 **독립 객체**다.
@@ -34,7 +35,9 @@ DNA는 "고정되는 것"과 "자라는 것"을 구분한다.
 # 개념 예시. Sprint 1에서 packages/shared-types(Zod)로 구현.
 employee:
   id: emp_01
-  brand_id: brand_01
+  company_id: com_01            # 개정 #002: 소속 회사
+  department_id: dep_01         # 개정 #002: 소속 부서
+  rank: junior                  # 승진 경로(junior→senior→lead ...)
   dna:
     genome:    { archetype: creator, role_family: content }   # 불변
     phenotype: { persona: "브랜드 보이스 라이터", tone: warm, locale: ko-KR }
@@ -58,13 +61,14 @@ DNA(genome+acquired) + Training/Certification/Performance에서 **파생**되는
 
 ## 5. Employee 생애주기 (Lifecycle)
 ```
-채용(Hire) → 온보딩(DNA+Brand Memory 스코프 설정) → Skill 배정(Matching)
+채용(Hire) → 부서 배치(Department 소속) → 온보딩(DNA+Brand Memory 스코프) → Skill 배정(Matching)
         → 교육(AI University) → 인증(Certification System) → 배치(업무 수행)
-        → 성과 측정 → Employee Upgrade(Skill/Cert 추가, DNA acquired 갱신) ↺
+        → 성과 측정 → Employee Upgrade(Skill/Cert 추가, DNA acquired 갱신) / 승진(rank↑) ↺
         → 은퇴/보관(Archive, 기억은 Brand Memory에 잔존)
 ```
-- **핵심 루프**: 성과 → Matching Profile 갱신 → 새 Skill 추천 → 교육·인증 → Upgrade.
-- 직원이 떠나도 **Brand Memory(회사의 기억)는 남는다** (해자).
+- **핵심 루프**: 성과 → Matching Profile 갱신 → 새 Skill 추천 → 교육·인증 → Upgrade/승진.
+- **승진(Promotion)**: 누적 성과·인증이 임계를 넘으면 부서 내 rank 상승 → Department Performance 기여.
+- 직원이 떠나도 **Brand Memory(회사의 기억)는 남는다** (해자). 기억은 이제 **Company 스코프**.
 
 ## 6. 불변식 (Invariants)
 1. Genome은 생성 후 변경 불가. 변경이 필요하면 새 Employee.

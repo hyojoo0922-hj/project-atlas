@@ -2,40 +2,48 @@
 
 > CTO 영역. 헌법([constitution](../constitution/))을 구현 가능한 시스템으로 번역한 문서.
 
-> ⭐ [개정 #001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md): Atlas는 OS가 아니라 **AI Employee Ecosystem**.
-> Employee가 중심 객체이며, 직원이 태어나고·배우고·인증받고·일하고·성장하는 생태계다.
-> 정밀 스펙은 [`../specs/`](../specs/README.md) 참조.
+> ⭐ [개정 #001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md): Atlas는 **AI Employee Ecosystem**.
+> ⭐ [개정 #002](../constitution/AMENDMENT-002-company-centric-organization.md): 최상위 객체는 **Company**. 계층 = **Company → Department → Employee → Skill**.
+> Atlas는 직원 관리 프로그램이 아니라 **회사를 운영하는 플랫폼**이다. 조직 상위 그림: [01-organization-architecture.md](01-organization-architecture.md).
 
 ## 1. 한 문장 정의
 
-Project Atlas는 **AI 직원(Employee)** 이 **Brand Memory**(회사의 기억)를 읽고,
-**자신에게 적합도(fit)가 높은 인증된 Skill**을 사용해, **예산(Cost Control) 안에서** 고객의 업무를 수행하고,
-**성과를 바탕으로 성장(Upgrade)**하는 **생태계(Ecosystem)**다.
+Project Atlas는 **Company(회사)**를 운영하는 플랫폼이다 — **Department(부서)**가 목표(KPI)를 갖고,
+부서 소속 **Employee(직원)**가 **Brand Memory(회사의 기억)**를 읽어 **적합도 높은 인증된 Skill**로
+**예산(Cost Control) 안에서** 일하며, 성과가 **Employee→Department→Company**로 롤업되어 조직이 **성장**한다.
 
 ## 2. 핵심 도메인 모델 (개념)
 
 ```
-Customer ──owns──> Brand ──has──> BrandMemory (영속 기억)
+Customer ──owns──> Company  ★최상위
+                     │ (DNA·Culture·CEO Style·Approval·Goal·KPI·Health · Brand Memory · Organization)
                      │
-                     ├──hires──> Employee (AI 직원 = 페르소나 + 역할 + 가드레일 + 예산)
-                     │              │
-                     │              └──assigned──> SkillAssignment (적합도 점수 포함)
-                     │                                   │
-Skill Library ──catalog──> Skill ──versions──> SkillVersion ──(lifecycle)──┘
+                     └──has──> Department ──staffs──> Employee ──assigned──> SkillAssignment
+                                  │(DNA·KPI·필수Skill·Health)   │(DNA·rank·성장)        │
+                                  └── 필수 Skill ↔ 현재 수준     │                       │
+Skill Library ──catalog──> Skill ──versions──> SkillVersion ──(10단계 lifecycle)─────────┘
                                                    │
 Task/Run ──executes──> SkillVersion ──meters──> CostLedger
+
+롤업:  Employee 성과 → Department Health → Company Health Score
+캐스케이드: Company Goal → Company KPI → Department KPI → Employee 성과
 ```
 
-- **Employee (중심 객체)**: 도구가 아니라 "직원". DNA + Skill Library + Brand Memory + Training History +
-  Certification + Performance History + Matching Profile을 가진 **독립 객체**. → [Employee DNA Spec](../specs/employee-dna-spec.md)
-- **Skill (핵심 자산)**: 프롬프트가 아니라 검증·인증을 거친 *자산*. 10단계 라이프사이클(ROI 분석 포함). → [Skill Lifecycle Spec](../specs/skill-lifecycle-spec.md)
-- **Brand Memory**: 직원이 바뀌어도 남는 회사의 기억. Atlas의 진짜 해자(moat).
+- **Company (최상위 객체)**: 회사 그 자체. DNA·문화·CEO Style·승인정책·목표·KPI·건강 + Brand Memory + Organization. → [Company DNA Spec](../specs/company-dna-spec.md)
+- **Department (독립 객체, 성장)**: 담당 업무·KPI·필수Skill·현재수준·Health·Performance. → [Department Spec](../specs/department-spec.md)
+- **Employee (중심 객체)**: Department 소속. DNA + Skill + 기억 + Training + Certification + Performance + Matching Profile + rank. → [Employee DNA Spec](../specs/employee-dna-spec.md)
+- **Skill (핵심 자산)**: 검증·인증을 거친 자산. 10단계 라이프사이클(ROI 포함). → [Skill Lifecycle Spec](../specs/skill-lifecycle-spec.md)
+- **Brand Memory**: 직원이 바뀌어도 남는 회사의 기억(이제 **Company 스코프**). 진짜 해자(moat).
 
-## 3. 3개의 핵심 서브시스템
+## 3. 핵심 서브시스템
 
-### (A) Brand Memory — 공유 기억
+### (A0) Organization — 조직 (개정 #002)
+- Company→Department→Employee 트리. Company DNA·문화·목표·KPI·Health.
+- 상세: [`01-organization-architecture.md`](01-organization-architecture.md) · [Company DNA](../specs/company-dna-spec.md) · [Department](../specs/department-spec.md)
+
+### (A) Brand Memory — 공유 기억 (Company 스코프)
 - 브랜드 보이스, 제품/서비스, 자산, 정책, 과거 산출물, 의사결정 이력을 구조화·버전관리하여 저장.
-- 모든 직원이 읽고, 인증된 직원만 쓴다(write).
+- 이제 **Company 스코프** — 회사의 모든 부서·직원이 공유. 인증된 직원만 쓴다(write).
 - 상세: [`02-data-model.md`](02-data-model.md)
 
 ### (B) Skill Library — 능력 카탈로그

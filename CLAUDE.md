@@ -4,10 +4,10 @@
 
 ## 정체성
 
-Project Atlas는 **AI Employee Ecosystem**이다. 고객은 AI 도구를 쓰지 않고 **AI 직원을 채용**한다.
-직원은 독립 객체(= DNA + Skill Library + Brand Memory + Training + Certification + Performance + Matching Profile)다.
-모든 작업은 [`docs/constitution/`](docs/constitution/)의 헌법 + [개정 #001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md)을 최상위 기준으로 따른다.
-충돌 시 헌법(개정 우선)이 이긴다. 정밀 설계는 [`docs/specs/`](docs/specs/README.md).
+Project Atlas는 **회사를 운영하는 플랫폼**(AI Employee Ecosystem)이다. 고객은 AI 도구를 쓰지 않고 **회사를 운영**하고 **AI 직원을 채용**한다.
+계층: **Company → Department → Employee → Skill** (Company가 최상위 1급 객체, Brand Memory는 Company 안에 포함).
+모든 작업은 헌법 + [개정 #001](docs/constitution/AMENDMENT-001-ai-employee-ecosystem.md) + [개정 #002](docs/constitution/AMENDMENT-002-company-centric-organization.md)을 최상위 기준으로 따른다(개정이 우선).
+조직 설계: [Organization Architecture](docs/architecture/01-organization-architecture.md) · 정밀 스펙: [`docs/specs/`](docs/specs/README.md).
 
 ## 절대 규칙
 
@@ -19,6 +19,7 @@ Project Atlas는 **AI Employee Ecosystem**이다. 고객은 AI 도구를 쓰지 
 5. **권한 분리.** CEO는 *무엇을*, CTO는 *어떻게*. 중대한 사업 방향 변경만 CEO 승인.
 6. **용어 통일.** *Feature*가 아니라 **Employee** 중심 용어 (Writer Feature ❌ / Writer Employee ⭕).
 7. **Skill은 자산.** 즉흥 프롬프트로 만들지 않는다. [Skill 라이프사이클](docs/specs/skill-lifecycle-spec.md) 10단계를 거친다.
+8. **Company가 최상위.** 새 도메인 작업은 Company→Department→Employee 계층과 Health/KPI 롤업·캐스케이드를 전제로 설계한다. 확장 가능한 트리 유지.
 
 ## 이번 Sprint(0) 범위 제한 — 구현 금지
 

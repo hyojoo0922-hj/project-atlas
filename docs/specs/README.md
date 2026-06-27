@@ -1,10 +1,19 @@
 # 스펙 (Specifications)
 
-> [헌법 개정 #001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)로 추가된 상세 스펙 계층.
+> 개정 [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)·[#002](../constitution/AMENDMENT-002-company-centric-organization.md)로 추가된 상세 스펙 계층.
 > 아키텍처(`../architecture/`)가 "전체 그림"이라면, 스펙은 각 핵심 객체/기관의 "정밀 설계"다.
+> 계층: **Company → Department → Employee → Skill** ([Organization Architecture](../architecture/01-organization-architecture.md)).
 
-## 중심 객체
-- [Employee DNA Specification](employee-dna-spec.md) — Atlas의 1급 시민, 7개 구성요소·4개 DNA 레이어·성장 루프
+## 조직 객체 (Company 중심 — 개정 #002)
+- [Company DNA Specification](company-dna-spec.md) — 최상위 객체, DNA·문화·CEO Style·승인정책·목표·KPI·건강
+- [Department Specification](department-spec.md) — 독립 객체(성장), DNA·KPI·필수Skill·현재수준·Health
+- [Organization Tree Specification](organization-tree-spec.md) — 확장 가능한 조직 트리
+- [Company Health Specification](company-health-spec.md) — 회사 건강(최상위 롤업)
+- [Department Health Specification](department-health-spec.md) — 부서 건강(롤업)
+- [Company Lifecycle](company-lifecycle-spec.md) — 설립→구성→운영→성장→재편
+
+## 중심 객체 (직원)
+- [Employee DNA Specification](employee-dna-spec.md) — Department 소속, 7개 구성요소·4개 DNA 레이어·승진/성장 루프
 
 ## Skill 자산
 - [Skill Lifecycle Specification](skill-lifecycle-spec.md) — 10단계(ROI 분석 포함), Skill=자산

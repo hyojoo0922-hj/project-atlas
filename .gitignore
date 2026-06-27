@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# Build output
+dist/
+build/
+.next/
+out/
+.turbo/
+
+# Env & secrets (NEVER commit — Cost Control & Security)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Local data
+*.local
+tmp/

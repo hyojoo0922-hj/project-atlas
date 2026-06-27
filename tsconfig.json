@@ -1,0 +1,15 @@
+{
+  "//": "에디터/타입체크용. Sprint 1 런타임은 Node 24 type-stripping(ADR 0006). 빌드 산출물 없음.",
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["packages/**/*.ts", "services/**/*.ts"]
+}

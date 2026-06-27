@@ -1,3 +1,3 @@
-# brand-memory (골격)
+# brand-memory
 
-Sprint 0 골격 — 코드 없음. 구현은 [Sprint 1](../../docs/sprints/sprint-1-proposal.md).
+회사의 기억(CRUD + 손실없는 리비전). `src/brand-memory.ts` · 테스트 `test/`.

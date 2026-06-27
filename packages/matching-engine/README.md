@@ -1,3 +1,4 @@
-# matching-engine (골격)
+# matching-engine
 
-Sprint 0 골격 — 코드 없음. 구현은 [Sprint 1](../../docs/sprints/sprint-1-proposal.md).
+직원별 적합도(설명가능) + 선행인증 게이트 + 임계 추천. `src/matching-engine.ts`.
+근거: docs/specs/skill-matching-engine-spec.md

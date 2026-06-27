@@ -1,0 +1,18 @@
+{
+  "name": "project-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Employee Ecosystem — Sprint 1 walking skeleton (zero-dependency, Node 24 native TS)",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test --experimental-strip-types",
+    "demo": "node --experimental-strip-types services/demo/src/run-demo.ts",
+    "build:demo": "node --experimental-strip-types services/demo/src/build-demo.ts"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ]
+}

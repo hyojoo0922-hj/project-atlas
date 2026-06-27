@@ -1,3 +1,3 @@
-# skill-library (골격)
+# skill-library
 
-Sprint 0 골격 — 코드 없음. 구현은 [Sprint 1](../../docs/sprints/sprint-1-proposal.md).
+Skill 자산 카탈로그 + 10단계 라이프사이클 상태머신(ROI 게이트). `src/skill-library.ts`.

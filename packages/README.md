@@ -1,11 +1,12 @@
-# packages/ — 공유 도메인 로직 (골격)
+# packages/ — 공유 도메인 로직
 
-> ⚠️ Sprint 0 골격. 코드 없음.
+> Sprint 1 구현됨(zero-dep TS, ADR 0006). 테스트: `npm test`.
 
-| 패키지 | 역할 | 문서 |
+| 패키지 | 역할 | 코드 |
 |---|---|---|
-| `shared-types/` | 도메인 타입(Zod) 단일 소스 | [ADR 0003](../docs/adr/0003-tech-stack.md) |
-| `brand-memory/` | 회사의 기억(CRUD+버전관리) | [data-model](../docs/architecture/02-data-model.md) |
-| `skill-library/` | Skill 카탈로그+라이프사이클 | [skill-os](../docs/architecture/03-skill-os.md) |
-| `matching-engine/` | 직원×Skill 적합도 | [matching](../docs/architecture/04-matching-engine.md) |
-| `cost-control/` | 예산·미터링·Model Gateway | [cost-control](../docs/architecture/05-cost-control.md) |
+| `shared-types/` | 도메인 타입 단일 소스 + ID 유틸 | `src/index.ts` |
+| `employee-core/` | **Employee 중심 객체** + 성장 루프 | `src/employee-core.ts` |
+| `brand-memory/` | 회사의 기억(CRUD+리비전) | `src/brand-memory.ts` |
+| `skill-library/` | Skill 자산 + 10단계 라이프사이클 | `src/skill-library.ts` |
+| `matching-engine/` | 직원별 적합도(설명가능)+인증게이트 | `src/matching-engine.ts` |
+| `cost-control/` | Model Gateway(mock)+CostLedger+ROI | `src/model-gateway.ts` |

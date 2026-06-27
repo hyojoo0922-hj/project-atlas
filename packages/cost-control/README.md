@@ -1,3 +1,3 @@
-# cost-control (골격)
+# cost-control
 
-Sprint 0 골격 — 코드 없음. 구현은 [Sprint 1](../../docs/sprints/sprint-1-proposal.md).
+Model Gateway(mock) + CostLedger + ROI + Budget. `src/model-gateway.ts`. Sprint 1 원가 0.

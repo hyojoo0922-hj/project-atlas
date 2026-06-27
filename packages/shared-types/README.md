@@ -1,3 +1,4 @@
-# shared-types (골격)
+# shared-types
 
-Sprint 0 골격 — 코드 없음. 구현은 [Sprint 1](../../docs/sprints/sprint-1-proposal.md).
+도메인 타입 단일 소스 + 결정적 ID 유틸. `src/index.ts`.
+근거: docs/specs/employee-dna-spec.md

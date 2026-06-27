@@ -1,4 +1,6 @@
-# customer-portal (골격)
+# customer-portal — Customer Experience 화면
 
-고객용 앱. **단순함은 고객에게.** AI 직원 채용·업무 위임·결과·크레딧 잔액.
-구현은 Sprint 3([roadmap](../../docs/sprints/roadmap.md)). 현재 코드 없음.
+**단순함은 고객에게.** 고객은 Skill OS를 몰라도 직원에게 일을 맡기면 결과가 온다.
+- Sprint 1: 정적 스냅샷 `public/index.html` (`npm run build:demo`로 생성).
+- 화면 구조/흐름: ../../docs/product/ux-screen-structure.md
+- Sprint 3: 고객 포털 본격 구현(인증/크레딧 포함).

@@ -18,6 +18,7 @@
 2. **도메인 코어 (메모리 내/로컬)** — `Customer/Brand/Employee/Skill/SkillVersion/SkillAssignment/BrandMemory` 타입 + 인메모리 리포지토리.
 3. **Brand Memory v0** — CRUD + 버전관리(리비전) 로직 (`packages/brand-memory`).
 4. **Skill Library v0** — 카탈로그 + 라이프사이클 상태머신 (`packages/skill-library`). seed Skill 2~3개(매니페스트만).
+   - 첫 직군 = **콘텐츠 라이터**(CEO 승인). seed Skill 후보: `brand-voice-writer`, `product-description-writer`, `repurpose-to-channel`(원문→채널별 변형).
 5. **Matching Engine v0** — 규칙 기반 설명가능 fit score (`packages/matching-engine`), 단위 테스트.
 6. **Model Gateway 인터페이스 + Mock** — 호출 시 `CostLedger`에 모의 비용 기록 (`packages/cost-control`). *실 제공자 호출 없음.*
 7. **Operator Console (읽기 위주 UI 골격)** — 직원·Skill·적합도·원가를 *보여주는* 화면. seed 데이터 기반.
@@ -45,11 +46,11 @@
 - 규모: 1 스프린트(추정 1~2주, 1인+AI 기준). 인메모리라 인프라 리스크 낮음.
 - 리스크: Matching 가중치는 *가설* → v0는 규칙 기반·조정 가능하게. 데이터 축적 후 v1 재검토.
 
-## 7. CEO 승인 요청 사항
-이 제안은 **사업 방향 변경이 아니라 합의된 설계의 첫 구현**이므로 CTO 자율 범위로 판단하나,
-다음 1건만 CEO 확인을 요청합니다:
-> **첫 타깃 직군/도메인 선택** — Sprint 1 seed Skill을 어떤 직무(예: 콘텐츠 라이터 vs 고객응대 vs 리서치)로 할지.
-> 이는 *무엇을 만들지*(CEO 영역)에 해당. → [의사결정 요청](#) 참조.
+## 7. CEO 결정 사항 (해결됨)
+이 제안은 **사업 방향 변경이 아니라 합의된 설계의 첫 구현**이므로 CTO 자율 범위.
+1건의 CEO 결정만 요청 → **해결**:
+> ✅ **첫 타깃 직군 = 콘텐츠 라이터** (CEO 승인, 2026-06-27).
+> 근거: Brand Memory(voice/product) 해자가 가장 직관적으로 드러나고, 효주님 기존 사업(콘텐츠/뷰티/카페)과 즉시 시너지.
 
 ## 8. 다음 (Sprint 2 예고)
 영속화(Postgres+RLS) → 실제 Model Gateway 1개 제공자 연동(원가 실측) → Customer Portal.

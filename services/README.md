@@ -15,3 +15,7 @@ Sprint 4에서 `services/` 하위 서비스로 실체화한다. 스펙: ../docs/
 - `demo/src/run-demo.ts` — Employee 중심 내러티브 출력 (`npm run demo`).
 - `demo/src/render.ts` + `build-demo.ts` — Operator HQ / Customer HTML 스냅샷 생성.
 - `orchestrator/src/orchestrator.ts` — 경험 엔진(입사→…→성과→다음추천).
+
+## services/onboarding (Sprint 2A)
+- `onboarding/src/onboarding-flow.ts` — 온보딩 경험 엔진: 컨설팅→진단→설계→추천→대표 승인→Company 생성.
+- 데모: `services/demo/src/onboarding-scenario.ts` · `run-onboarding-demo.ts`(npm run demo:onboarding) · `render-onboarding.ts`.

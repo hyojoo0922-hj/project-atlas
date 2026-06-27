@@ -60,6 +60,8 @@
 - 규모: 3~4주(1인+AI). 신규 패키지 ~10개. 인메모리라 인프라 리스크 낮음.
 - 리스크: 진단·추천·Health 규칙/가중치는 *가설* → v0 규칙·템플릿·조정 가능. 범위가 커 **2단계 분할 가능**(2A 온보딩→생성 / 2B 운영 루프).
 
+> ✅ **2A 완료(2026-06-27)**: 온보딩→진단→설계→대표 승인→Company 생성 구현. 40 tests green. 보고: [sprint-2a-report.md](sprint-2a-report.md). 2B(운영 루프·Health·Growth·재추천)는 후속.
+
 ## 7. CEO / CEO Advisor 승인 요청
 이 재제안은 [개정 #004](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md) 반영분입니다.
 요청 사항:

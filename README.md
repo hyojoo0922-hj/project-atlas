@@ -77,13 +77,12 @@ Customer
 
 ## 현재 상태
 
-🏛️ **Sprint 0 — 회사 설립 (Founding).** 코드 구현 없음. 구조·아키텍처·로드맵 정립.
+✅ **Sprint 2A 완료** — AI 공동창업자 온보딩(컨설팅→진단→설계→대표 승인→Company 생성). 인메모리, **40 tests green**.
+- 실행: `npm test` · `npm run demo:onboarding` · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
+- 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md) · 전체 로드맵: [roadmap.md](docs/sprints/roadmap.md)
+- 다음: **Sprint 2B**(운영 루프·Health 롤업·Growth·재추천)
 
-- 다음 단계 제안: [`docs/sprints/sprint-1-proposal.md`](docs/sprints/sprint-1-proposal.md)
-- 전체 로드맵: [`docs/sprints/roadmap.md`](docs/sprints/roadmap.md)
-
-> ⚠️ 이번 Sprint에서 **구현하지 않는 것**: 로그인, 결제, AI API 연동, 영상/이미지 생성.
-> 이는 의도된 범위 제한이며, Sprint 1+ 에서 게이트를 통과한 순서로 구현한다.
+> ⚠️ 아직 **구현하지 않는 것**: 로그인, 결제, 외부 AI API(Gateway는 mock·원가 $0), 영상/이미지 생성.
 
 ## 저장소 구조
 

@@ -20,7 +20,8 @@ export interface ReadinessAssessment {
 // ───────────────────────── Output Scope ─────────────────────────
 export type OutputType =
   | "text" | "document" | "image" | "video" | "ad_copy"
-  | "report" | "social_post" | "product_page" | "customer_reply";
+  | "report" | "social_post" | "product_page" | "customer_reply"
+  | "image_brief";   // 이미지/영상 대체 산출물(연출 기획안·촬영 가이드·프롬프트) — 실제 생성 아님
 
 export type CostTier = "low" | "med" | "high" | "very_high";
 

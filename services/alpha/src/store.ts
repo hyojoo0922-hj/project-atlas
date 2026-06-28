@@ -25,7 +25,8 @@ export interface Material {
 
 /** mock 결과물 (실제 생성은 Sprint 3) */
 export interface TaskResult {
-  outputType: OutputType;
+  outputType: OutputType;          // 실제 전달된 산출물 유형(이미지면 image_brief)
+  requestedOutputType?: OutputType; // 원래 요청 유형(예: image) — 대체 산출물 구분용
   by: string;             // 담당 직원 persona
   state: "final" | "draft";
   content: string;        // mock/placeholder 텍스트

@@ -67,6 +67,12 @@ async function doLogin(){
   $("login").classList.add("hide"); $("app").classList.remove("hide");
   render();
 }
+function outLabel(t){return ({image_brief:"이미지 제작 기획안",ad_copy:"광고 카피",social_post:"SNS 포스트",customer_reply:"고객 응대",report:"리포트",text:"텍스트",document:"문서",product_page:"상세페이지"})[t]||t;}
+function resultMeta(r){
+  const alt = r.requestedOutputType && r.requestedOutputType!==r.outputType;
+  return `${outLabel(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · ${esc(r.by)}`
+    + (alt?` <span class="pill p-wait">실제 ${esc(r.requestedOutputType)} 아님</span>`:"");
+}
 function statusPill(s){
   const m={ready:["p-ready","실행 가능"],ready_with_missing_info:["p-wait","일부 자료로 진행"],awaiting_materials:["p-wait","자료 대기"],needs_hire:["p-hire","직원 필요"],delivered:["p-done","결과 완료"],approved:["p-ok","승인됨"],revise:["p-wait","수정 요청"]};
   const [c,l]=m[s]||["p-wait",s]; return `<span class="pill ${c}">${l}</span>`;
@@ -128,7 +134,7 @@ function secResults(){
   h+=list.map(r=>`<div class="card">
     <div class="row between"><div class="b">${esc(r.title)}</div>
       <div class="row" style="gap:6px">${r.approved?'<span class="pill p-ok">승인됨</span>':'<span class="pill p-done">전달 완료</span>'}<button class="x" title="숨기기" onclick="hideCard('${r.taskId}')">✕</button></div></div>
-    <div class="muted small mt">${esc(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · 담당 ${esc(r.by)}</div>
+    <div class="muted small mt">${resultMeta(r)}</div>
     ${r.partialMaterials?'<div class="small" style="color:#e8c772">일부 자료가 부족한 상태에서 초안으로 작성되었습니다.</div>':''}
     <div class="result">${esc(r.content)}</div>
     ${r.canRevise?`<div class="row mt"><button class="btn2 sm" onclick="revise('${r.taskId}')">수정 요청</button></div>`:''}</div>`).join("");
@@ -184,7 +190,7 @@ function taskCard(t){
     inner+=`<div class="mt b small">결과물</div>`;
     if(t.partialMaterials) inner+=`<div class="small" style="color:#e8c772">일부 자료가 부족한 상태에서 초안으로 작성되었습니다. 자료를 더 제공하면 다시 실행해 품질을 높일 수 있습니다.</div>`;
     t.results.forEach(r=>{
-      inner+=`<div class="result"><div class="b small">${esc(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · ${esc(r.by)}</div>${esc(r.content)}</div>`;
+      inner+=`<div class="result"><div class="b small">${resultMeta(r)}</div>${esc(r.content)}</div>`;
     });
     if(t.status!=="approved") inner+=`<div class="row mt"><button class="btn" onclick="approve('${t.id}')">승인하기</button><button class="btn2" onclick="revise('${t.id}')">수정 요청</button></div>`;
   }

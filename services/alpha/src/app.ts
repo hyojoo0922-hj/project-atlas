@@ -50,6 +50,7 @@ export function registerTask(store: AlphaStore, title: string): AlphaTask {
 type SubPlanMode = "final" | "draft" | "blocked";
 interface AlphaPlan {
   outputType: ReturnType<typeof toSubTasks>[number]["outputType"];
+  deliveredType: ReturnType<typeof toSubTasks>[number]["outputType"]; // 실제 전달 유형(이미지→image_brief)
   roleFamily: RoleFamily;
   mode: SubPlanMode;
   executor?: string;            // 결과를 만들 직원 persona
@@ -58,31 +59,44 @@ interface AlphaPlan {
   blockReason?: "staff" | "info";
 }
 
+const isVisual = (t: string): boolean => t === "image" || t === "video";
+
 function alphaPlans(store: AlphaStore, task: AlphaTask): AlphaPlan[] {
   const info = new Set(store.data.companyInfo);
   const writer = store.data.employees.find((e) => e.dna.genome.roleFamily === "content");
   return toSubTasks(task.outputTypes).map((st): AlphaPlan => {
+    // 이미지/영상: 실제 생성 대신 텍스트형 대체 산출물(image_brief)을 Writer/대표 비서가 작성.
+    // Designer 부재는 추천 채용(비차단)으로 유지. 절대 "이미지 생성"하지 않음(Trust First).
+    if (isVisual(st.outputType)) {
+      const hasDesigner = store.data.employees.some((e) => e.dna.genome.roleFamily === "design");
+      return {
+        outputType: st.outputType, deliveredType: "image_brief", roleFamily: st.roleFamily,
+        mode: "draft", executor: writer?.dna.phenotype.persona ?? "대표 비서",
+        missingInfo: st.requiredInfo.filter((k) => !info.has(k)),
+        missingRole: hasDesigner ? undefined : "design",
+      };
+    }
     const base = planSubTask(st, store.data.employees, info);
     const scope = getOutputScope(st.outputType);
     if (base.status === "executable") {
-      return { outputType: st.outputType, roleFamily: st.roleFamily, missingInfo: [],
+      return { outputType: st.outputType, deliveredType: st.outputType, roleFamily: st.roleFamily, missingInfo: [],
         mode: base.confidence === "final" ? "final" : "draft", executor: base.selectedEmployeePersona };
     }
     if (base.status === "need_info") {
       const emp = store.data.employees.find((e) => e.dna.genome.roleFamily === st.roleFamily);
       if (scope.minDraftOk) {
-        return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
+        return { outputType: st.outputType, deliveredType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
           executor: emp?.dna.phenotype.persona ?? roleTitle(st.roleFamily), missingInfo: base.missingInfo };
       }
-      return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "info", missingInfo: base.missingInfo };
+      return { outputType: st.outputType, deliveredType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "info", missingInfo: base.missingInfo };
     }
     // need_staff: 직군 부재
     if (scope.minDraftOk && writer) {
       // 텍스트형은 Writer가 대체 초안 작성 (이상적 직군은 추천 채용으로 표시)
-      return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
+      return { outputType: st.outputType, deliveredType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
         executor: writer.dna.phenotype.persona, missingInfo: [], missingRole: st.roleFamily };
     }
-    return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "staff", missingInfo: [], missingRole: st.roleFamily };
+    return { outputType: st.outputType, deliveredType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "staff", missingInfo: [], missingRole: st.roleFamily };
   });
 }
 
@@ -108,6 +122,8 @@ export function taskCTA(store: AlphaStore, task: AlphaTask): { kind: "execute" |
   if (task.status === "ready_with_missing_info") {
     const providedSome = task.materials.length > 0
       || toSubTasks(task.outputTypes).some((st) => st.requiredInfo.some((k) => store.data.companyInfo.includes(k)));
+    const imageOnly = task.outputTypes.length > 0 && task.outputTypes.every(isVisual);
+    if (imageOnly) return { kind: "proceed", label: providedSome ? "이미지 기획안으로 진행하기" : "최소 정보로 이미지 기획안 만들기" };
     return { kind: "proceed", label: providedSome ? "이대로 초안으로 진행하기" : "최소 정보로 초안 진행하기" };
   }
   return { kind: "blocked", label: task.status === "needs_hire" ? "직원 채용 필요" : "자료 필요" };
@@ -137,11 +153,12 @@ export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
   let partial = false;
   for (const p of plans) {
     if (p.mode === "blocked") { partial = true; continue; }
+    const by = p.executor ?? roleTitle(p.roleFamily);
     results.push({
-      outputType: p.outputType,
-      by: p.executor ?? roleTitle(p.roleFamily),
-      state: p.mode,
-      content: mockContent(p.outputType, store.data.company.name, p.executor ?? roleTitle(p.roleFamily)),
+      outputType: p.deliveredType,                                  // 이미지면 image_brief
+      requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
+      by, state: p.mode,
+      content: mockContent(p.deliveredType, store.data.company.name, by),
     });
     if (p.mode === "draft") partial = true;
   }
@@ -240,7 +257,8 @@ export function resultsTab(tasks: AlphaTask[]) {
     .reverse()
     .flatMap((t) => t.results.map((r) => ({
       taskId: t.id, title: t.title, by: r.by, outputType: r.outputType,
-      state: r.state, approved: t.status === "approved", content: r.content,
+      requestedOutputType: r.requestedOutputType, state: r.state,
+      approved: t.status === "approved", content: r.content,
       canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
     })));
 }
@@ -300,7 +318,19 @@ function mockContent(type: OutputType, company: string, by: string): string {
     case "text": return `[텍스트 초안 · ${by}]\n${company} 관련 콘텐츠 초안입니다. (예시 placeholder)`;
     case "report": return `[리포트 초안 · ${by}]\n${company} 요약 리포트 (예시 placeholder)`;
     case "customer_reply": return `[고객 응대 초안 · ${by}]\n안녕하세요, ${company}입니다. 문의 주셔서 감사합니다. (예시 placeholder)`;
-    case "image": case "video": return `🎨 ${type === "image" ? "이미지" : "영상"} 결과물은 추후 지원 예정입니다 (${by} 준비 완료).`;
+    case "image_brief": return [
+      `📋 이미지 제작 기획안 · ${by}`,
+      `⚠️ 실제 이미지는 아직 생성하지 않았습니다. 대신 Designer Employee가 사용할 수 있는 연출 기획안/촬영 가이드/프롬프트 초안입니다.`,
+      ``,
+      `1) 연출 기획안: ${company} 신메뉴를 따뜻한 분위기로 연출 (예시 placeholder)`,
+      `2) 촬영 가이드: 자연광·45도 앵글·우드톤 배경 권장 (예시 placeholder)`,
+      `3) 이미지 프롬프트 초안: "${company} 신메뉴, 따뜻한 조명, 미니멀, 고해상도" (예시 placeholder)`,
+      `4) 디자이너 요청서: 위 기획안 기반 1차 시안 요청`,
+      `5) 필요 자료 체크리스트: 로고 · 브랜드 컬러 · 제품 사진 · 디자인 레퍼런스`,
+      ``,
+      `※ 자료가 부족하면 실제 제작 품질은 제한될 수 있습니다. 자료를 더 제공하면 더 정확한 기획안이 됩니다.`,
+    ].join("\n");
+    case "image": case "video": return `🎨 ${type === "image" ? "이미지" : "영상"} 제작 기획안 (실제 생성 아님) · ${by}`;
     default: return `[초안 · ${by}] (예시 placeholder)`;
   }
 }

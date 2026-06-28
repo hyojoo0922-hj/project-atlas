@@ -44,6 +44,8 @@ export const OUTPUT_SCOPE: Record<OutputType, OutputScope> = {
   document: { type: "document", requiredInfo: ["purpose", "source"], requiredRoleFamilies: ["content", "research"], requiredSkills: ["doc-writer"], costTier: "med", qualityBar: "draft_ok", minDraftOk: true },
   report: { type: "report", requiredInfo: ["data", "period", "goal"], requiredRoleFamilies: ["research"], requiredSkills: ["report-builder"], costTier: "med", qualityBar: "final_ge_90", minDraftOk: true },
   customer_reply: { type: "customer_reply", requiredInfo: ["faq", "tone", "policy"], requiredRoleFamilies: ["support"], requiredSkills: ["inquiry-responder"], costTier: "low", qualityBar: "final_ge_90", minDraftOk: true },
+  // 이미지/영상의 텍스트형 대체 산출물(기획안/가이드/프롬프트) — Writer/Assistant가 작성, 실제 생성 아님
+  image_brief: { type: "image_brief", requiredInfo: [], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "draft_ok", minDraftOk: true },
 };
 export function getOutputScope(type: OutputType): OutputScope { return OUTPUT_SCOPE[type]; }
 

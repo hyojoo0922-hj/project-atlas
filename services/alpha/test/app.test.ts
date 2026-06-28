@@ -75,14 +75,33 @@ test("모든 텍스트형 업무: 자료 0%여도 '최소 정보로 초안' CTA 
   }
 });
 
-test("Trust First 하한선: 이미지 업무는 Designer 없으면 진행 불가(blocked) + 이유 안내", () => {
+test("이미지 업무: Designer 없어도 막히지 않고 '이미지 기획안' 대체 진행 + Designer 추천 유지", () => {
   const s = tmp();
   const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");   // image(design), 디자이너 없음
   const v = taskView(s, t);
-  assert.equal(v.cta.kind, "blocked");
-  assert.ok(v.nextActions.some((a) => a.includes("Designer")));   // 다음 행동 안내
+  assert.equal(v.cta.kind, "proceed");                      // 막히지 않음
+  assert.ok(v.recommendedHires.some((h) => h.roleFamily === "design")); // Designer 추천 유지
   const r = executeTask(s, t.id)!;
-  assert.equal(r.results.length, 0);                       // 추측/가짜 생성 안 함
+  assert.equal(r.status, "delivered");
+  const res = r.results[0]!;
+  assert.equal(res.outputType, "image_brief");             // 대체 산출물(실제 image 아님)
+  assert.equal(res.requestedOutputType, "image");          // 원 요청 기록
+  assert.ok(res.content.includes("실제 이미지는 아직 생성하지 않았습니다")); // Trust First 명시
+});
+
+test("점6 — '신규메뉴 연출컷 이미지 만들어줘' 전체 흐름", () => {
+  const s = tmp();
+  const t = registerTask(s, "신규메뉴 연출컷 이미지 만들어줘");
+  assert.ok(t.outputTypes.includes("image"));              // image 분석
+  const v = taskView(s, t);
+  assert.equal(v.cta.label, "최소 정보로 이미지 기획안 만들기"); // 자료 0% CTA
+  assert.ok(v.neededMaterials.length > 0);                 // 자료 요청 표시
+  const done = proceedWithPartial(s, t.id)!;               // 최소 정보로 진행
+  assert.equal(done.status, "delivered");
+  assert.ok(done.results.some((x) => x.outputType === "image_brief"));
+  assert.ok(done.partialMaterials);
+  approveTask(s, done.id, { overall: 5 });                 // 승인
+  assert.ok(dashboard(s).deliverables.some((x) => x.taskId === done.id && x.approved)); // 결과물 탭
 });
 
 test("승인 / 수정 요청 상태 전이", () => {

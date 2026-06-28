@@ -33,13 +33,13 @@ const server = createServer((req, res) => {
 
   let raw = "";
   req.on("data", (c) => { raw += c; if (raw.length > 2e6) req.destroy(); });
-  req.on("end", () => { try { handle(url, req, res, raw); } catch (e) {
+  req.on("end", () => { handle(url, req, res, raw).catch((e) => {
     console.error("[alpha] handler error:", e);
     send(res, 500, { error: "server error" });   // 절대 프로세스를 죽이지 않는다
-  } });
+  }); });
 });
 
-function handle(url: string, req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse, raw: string) {
+async function handle(url: string, req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse, raw: string) {
   {
     let b: Record<string, unknown> = {};
     try { b = raw ? JSON.parse(raw) : {}; } catch { send(res, 400, { error: "bad json" }); return; }
@@ -68,12 +68,12 @@ function handle(url: string, req: import("node:http").IncomingMessage, res: impo
         reply({ task: taskView(store, t) }); return;
       }
       case "/api/execute": {
-        const t = executeTask(store, String(b.taskId ?? ""));
+        const t = await executeTask(store, String(b.taskId ?? ""));
         if (!t) { send(res, 404, { error: "no task" }); return; }
         reply({ task: taskView(store, t) }); return;
       }
       case "/api/proceed": {   // 일부 자료 미제공 — "이대로 진행하기"
-        const t = proceedWithPartial(store, String(b.taskId ?? ""));
+        const t = await proceedWithPartial(store, String(b.taskId ?? ""));
         if (!t) { send(res, 404, { error: "no task" }); return; }
         reply({ task: taskView(store, t) }); return;
       }

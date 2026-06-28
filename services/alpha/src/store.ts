@@ -50,6 +50,17 @@ export interface AlphaTask {
   archivedAt?: string;          // 숨김 처리 시각(ISO)
 }
 
+/** AI 호출 원가/사용량 내부 기록 (고객 비노출) */
+export interface UsageEntry {
+  taskId: Id;
+  outputType: OutputType;
+  model: string;
+  mode: "ai" | "mock";
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
 export interface AlphaData {
   version: number;
   seq: number;
@@ -59,6 +70,7 @@ export interface AlphaData {
   employees: CompanyEmployee[];
   companyInfo: string[];        // 보유 정보 키 (Company Memory)
   tasks: AlphaTask[];
+  usage: UsageEntry[];          // 결과물 생성 시 AI 원가/사용량 기록
 }
 
 /** 데이터 스키마 버전. 구버전(예: 채팅 시절 tasks)과 호환되지 않으면 새로 부트스트랩. */
@@ -133,5 +145,5 @@ function bootstrap(): AlphaData {
     mkEmp(depOps, "operations", "운영 매니저", "responder"),
     mkEmp(depMkt, "content", "콘텐츠 라이터", "creator"),
   ];
-  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [] };
+  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [], usage: [] };
 }

@@ -3,9 +3,14 @@
 import type { Id, OutputType, RoleFamily } from "../../../packages/shared-types/src/index.ts";
 import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from "../../../packages/assistant/src/work-loop.ts";
 import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
+import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 import { AlphaStore, type AlphaTask, type Material, type TaskResult, type TaskStatus } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
+
+// 텍스트 생성기(기본 mock — 오프라인/테스트 안전). 서버가 실제 AI로 교체 가능.
+let textGenerator: TextGenerator = makeTextGenerator();
+export function setTextGenerator(g: TextGenerator): void { textGenerator = g; }
 
 // ── 직원 카탈로그 (채용 가능 직원) ──
 export interface EmployeeCatalogItem {
@@ -142,8 +147,8 @@ export function provideMaterial(store: AlphaStore, taskId: Id, infoKey: string, 
   return task;
 }
 
-// ── 직원 실행 (mock 결과물 생성, AI 없음) — 모든 유형 best-effort ──
-export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
+// ── 직원 실행 — 결과물 생성 순간에만 AI 호출(없으면 mock). 모든 유형 best-effort ──
+export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaTask | null> {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   recompute(store, task);
@@ -154,13 +159,25 @@ export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
   for (const p of plans) {
     if (p.mode === "blocked") { partial = true; continue; }
     const by = p.executor ?? roleTitle(p.roleFamily);
-    results.push({
-      outputType: p.deliveredType,                                  // 이미지면 image_brief
-      requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
-      by, state: p.mode,
-      content: mockContent(p.deliveredType, store.data.company.name, by),
+    const draft = p.mode === "draft";
+    const fallbackText = mockContent(p.deliveredType, store.data.company.name, by);
+    // 실제 결과물 생성은 이 순간에만 (AI 호출). 키 없거나 실패 시 mock.
+    const gen = await textGenerator({
+      outputType: p.deliveredType,
+      system: buildSystem(store, by, draft),
+      prompt: buildPrompt(store, task, p.deliveredType, draft),
+      fallbackText, draft,
     });
-    if (p.mode === "draft") partial = true;
+    results.push({
+      outputType: p.deliveredType,
+      requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
+      by, state: p.mode, content: gen.text,
+    });
+    store.data.usage.push({
+      taskId: task.id, outputType: p.deliveredType, model: gen.model, mode: gen.mode,
+      inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd,
+    });
+    if (draft) partial = true;
   }
   task.results = results;
   task.partialMaterials = partial && results.length > 0;
@@ -171,8 +188,23 @@ export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
 }
 
 /** "이대로 진행하기"(별칭) — executeTask가 best-effort로 생성하므로 동일 동작. */
-export function proceedWithPartial(store: AlphaStore, taskId: Id): AlphaTask | null {
+export function proceedWithPartial(store: AlphaStore, taskId: Id): Promise<AlphaTask | null> {
   return executeTask(store, taskId);
+}
+
+// 결과물 생성 프롬프트 (Cost First: 짧고 명확). 회사/보유 자료 맥락 주입.
+function buildSystem(store: AlphaStore, by: string, draft: boolean): string {
+  const c = store.data.company;
+  return `당신은 ${c.name}(업종: ${c.industry})의 ${by}입니다. 한국어로 ${draft ? "초안" : "최종본"}을 작성하세요. `
+    + `브랜드에 맞고 간결하게. 모르는 사실은 추측하지 말고 자리표시자로 두세요.`;
+}
+function buildPrompt(store: AlphaStore, task: AlphaTask, type: OutputType, draft: boolean): string {
+  const known = store.data.companyInfo.map(infoLabel).join(", ") || "없음";
+  const base = `요청: "${task.title}"\n결과물 유형: ${type}\n보유 자료: ${known}`;
+  if (type === "image_brief") {
+    return base + `\n실제 이미지는 만들지 말고, 디자이너가 쓸 연출 기획안/촬영 가이드/이미지 프롬프트 초안/필요 자료 체크리스트를 작성하세요. 맨 앞에 "실제 이미지는 아직 생성하지 않았습니다"를 명시하세요.`;
+  }
+  return base + (draft ? `\n자료가 일부 부족하므로 초안 수준으로 작성하세요.` : ``);
 }
 
 export function approveTask(store: AlphaStore, taskId: Id, feedback?: AlphaTask["feedback"]): boolean {

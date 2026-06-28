@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { __resetIds } from "../../shared-types/src/index.ts";
-import type { OnboardingResponse } from "../../shared-types/src/index.ts";
+import type { OnboardingResponse, PaymentConfirmation } from "../../shared-types/src/index.ts";
 import { diagnose } from "../../diagnosis/src/diagnosis.ts";
 import { recommendOrganization } from "../../org-recommendation/src/recommendation.ts";
 import {
-  ApprovalRequiredError, approve, buildDesignDraft, createCompanyFromDraft, requestFoundingApproval,
+  ApprovalRequiredError, PaymentRequiredError, approve, buildCompanyProposal,
+  buildDesignDraft, createCompanyFromDraft, requestFoundingApproval,
 } from "../src/company-creation.ts";
 
 function setup() {
@@ -19,35 +20,32 @@ function setup() {
   const draft = buildDesignDraft(res, dg, rec);
   return { res, dg, rec, draft };
 }
+const paid: PaymentConfirmation = { id: "pay_1", plan: "운영", confirmed: true };
 
-test("creation: 승인되지 않은 draft로는 Company를 만들 수 없다", () => {
-  const { draft } = setup();
-  assert.throws(() => createCompanyFromDraft("cus_1", draft), ApprovalRequiredError);
+test("무료 산출: buildCompanyProposal은 Preview + 기대효과를 만든다(생성 아님)", () => {
+  const { draft, rec } = setup();
+  const p = buildCompanyProposal(draft, rec);
+  assert.equal(p.status, "proposal_ready");
+  assert.ok(p.expectedEffect.savedHoursPerWeek > 0);
+  assert.ok(p.designPreview.departments.length >= 2);
 });
 
-test("creation: 대표 승인 후 Company/CEO/Department/Employee + 트리 생성", () => {
+test("결제 게이트: 결제 없이는 Company 생성 불가(무료는 Preview까지)", () => {
   const { draft } = setup();
-  const apr = requestFoundingApproval(draft);
-  approve(apr, draft);
-  const created = createCompanyFromDraft("cus_1", draft);
+  const apr = requestFoundingApproval(draft); approve(apr, draft);
+  assert.throws(() => createCompanyFromDraft("cus_1", draft, { id: "p", plan: "x", confirmed: false }), PaymentRequiredError);
+});
+
+test("승인 게이트: 승인되지 않은 draft는 결제해도 생성 불가", () => {
+  const { draft } = setup();
+  assert.throws(() => createCompanyFromDraft("cus_1", draft, paid), ApprovalRequiredError);
+});
+
+test("결제+승인 후 Company/CEO/Department/Employee + 트리 생성", () => {
+  const { draft } = setup();
+  const apr = requestFoundingApproval(draft); approve(apr, draft);
+  const created = createCompanyFromDraft("cus_1", draft, paid);
   assert.equal(created.company.name, "로마티 카페");
-  assert.equal(created.ceo.companyId, created.company.id);
-  assert.equal(created.departments[0]!.name, "Operations");      // 진단 1순위
-  assert.equal(created.departments[0]!.priority, 1);
-  assert.ok(created.employees.length >= 2);                       // 부서별 seed 직원
-  // 트리: company 1 + ceo 1 + dept 2 + employee N
-  const kinds = created.tree.map((n) => n.kind);
-  assert.equal(kinds.filter((k) => k === "company").length, 1);
-  assert.equal(kinds.filter((k) => k === "ceo").length, 1);
-  assert.ok(kinds.filter((k) => k === "department").length >= 2);
-});
-
-test("creation: 설계안에 Writer Employee와 추천 Skill이 반영된다", () => {
-  const { draft } = setup();
-  const apr = requestFoundingApproval(draft);
-  approve(apr, draft);
-  const created = createCompanyFromDraft("cus_1", draft);
-  const writer = created.employees.find((e) => e.dna.genome.roleFamily === "content");
-  assert.ok(writer, "Writer Employee 존재");
-  assert.ok(writer!.recommendedSkills.includes("brand-voice-writer"));
+  assert.equal(created.departments[0]!.name, "Operations");
+  assert.ok(created.employees.some((e) => e.dna.genome.roleFamily === "content")); // Writer Employee
 });

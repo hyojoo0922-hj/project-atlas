@@ -41,24 +41,31 @@ Operator HQ
 
 ## B. Customer Experience (고객)
 
-### 온보딩 (Customer Journey — 개정 #004 + CPO UX Sprint #001 IA)
-첫 IA는 "AI 기능 탐색"이 아니라 **대표 계정 생성 → 무료 사업진단권 → 진단 → 공동창업자의 판단 → 설계안 → 회사 설립 승인 → Company 생성 → 첫 업무**다.
+### 온보딩 (Customer Journey — 개정 #004 + CPO UX #001 + BUSINESS MEMO #008 무료/유료)
+**무료 = 진단과 추천 / 유료 = 실행과 회사 운영.** 무료는 **회사 설계안 Preview(`proposal_ready`)까지**.
 ```
-Onboarding (대표 계정 + AI 공동창업자)
+■ 무료 (진단·추천)
 ├─ 대표 계정 생성        (회원가입 X → "대표 계정 생성")
 ├─ 무료 사업진단권 활성화 (계정당 1회) ── 가입 직후 빈 대시보드 금지, 곧장 진단으로
-├─ 무료 AI 컨설팅        질문 응답(업종·단계·문제·성장 …)
+├─ 무료 AI 컨설팅        질문 응답
 ├─ AI 사업 진단          "지금은 마케팅보다 운영 체계를 먼저" (점수 아닌 우선순위 판단)
-├─ AI 회사 설계안        부서·직원·우선순위 요약 (Skill/점수/인증 비노출)
-├─ 회사 설립 승인        CTA "이 설계안으로 내 회사 만들기"
-├─ Company 생성 완료
-└─ 첫 업무 추천          CTA "첫 업무 맡기기"  → 이후 "계속 회사 운영하기"(플랜/크레딧)
+├─ AI 회사 설계안 Preview 부서·직원·우선순위 + 예상 절약 시간/기대 효과
+└─ (무료 종착) proposal_ready
+■ 유료 (실행·운영) — 결제 후
+├─ 결제 → 회사 설립
+├─ 대표 비서 출근 (assistant_on_duty)
+└─ 첫 AI 직원 준비 (first_employee_ready)
 ```
 **항상 보이는 3요소(모든 단계)**: ① 현재 단계 · ② 공동창업자의 판단 · ③ 대표의 다음 행동.
-> 고객은 **설계하지 않는다.** 진단을 받고 → 설계안을 보고 → 회사 설립을 승인한다.
+
+**문구(CTA)**:
+- 무료: `회사 설계안 보기` · `필요한 직원 확인하기` · `내 회사 설립 준비하기`
+- 유료 전환: `이 설계안으로 회사 설립하기` · `대표 비서 출근시키기` · `첫 AI 직원 채용하기` · `계속 회사 운영하기`
+- ❌ 무료 단계 "회사 생성 완료" 류 문구 금지.
 
 **고객 화면에서 숨기는 내부 요소**: Skill Lifecycle · Matching Score · Certification · Model · Token · CostLedger · Health/KPI 내부 수치.
-(이 지표들은 Operator HQ 화면에서만 노출 — `apps/operator-console/public/onboarding.html`)
+(운영자 화면에서만 노출 — `apps/operator-console/public/onboarding.html`)
+> 경계 상세: [free-paid-boundary](../business/free-paid-boundary.md) · 대표 비서: [owner-assistant-spec](../specs/owner-assistant-spec.md) · 업셀: [upsell spec](../specs/employee-recommendation-upsell-spec.md)
 
 ### 운영 화면 맵
 ```

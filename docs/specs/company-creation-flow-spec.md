@@ -2,9 +2,20 @@
 
 > 근거: [헌법 개정 #004](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md) §4·§5 · [Onboarding Architecture](../architecture/07-onboarding-architecture.md)
 > **AI가 회사를 설계하고, 대표는 최종 승인만** 한다. 고객은 직접 조직을 짜지 않는다.
+> ⚠️ **BUSINESS MEMO #008**: 무료는 **Company Proposal(설계안 Preview)까지**. 실제 **Company Creation은 결제 이후**.
+
+## 0. 무료/유료 경계 (Proposal ↔ Creation)
+| | 무료 | 유료 |
+|---|---|---|
+| 함수 | `buildCompanyProposal(draft, rec)` | `createCompanyFromDraft(customerId, draft, payment)` |
+| 산출 | `CompanyProposal`(Preview + 기대효과) | 실제 Company/CEO/Dept/Employee + 트리 |
+| 게이트 | 없음 | **PaymentConfirmation.confirmed** 필수 → 없으면 `PaymentRequiredError` |
+| 종착 | `proposal_ready` | `company_created → assistant_on_duty → first_employee_ready` |
+
+→ [free-paid-boundary](../business/free-paid-boundary.md)
 
 ## 1. 목적
-진단 결과를 바탕으로 회사를 **자동 설계(draft)** 하고, 대표 승인 후 실제 객체로 **인스턴스화**한다.
+진단 결과를 바탕으로 회사를 **자동 설계(draft→proposal)** 하고, **결제·승인 후** 실제 객체로 **인스턴스화**한다.
 
 ## 2. 흐름
 ```
@@ -44,8 +55,9 @@ Company 생성 → CEO 생성 → Organization 트리(company/ceo/department/emp
 - 생성은 [Organization Tree](organization-tree-spec.md) 불변식을 지킨다.
 - 직원의 실제 Skill 인증·배포는 생성 이후 운영(살아있는 루프)에서 진행.
 
-## 5. 승인 (대표는 승인만)
-- 대표 승인은 [Approval Workflow](approval-workflow-spec.md)의 **창업 승인(founding)** 유형.
+## 5. 승인 + 결제 (대표는 승인만)
+- 대표 승인은 [Approval Workflow](approval-workflow-spec.md)의 **창업 승인(founding)** 유형 — 유료 경로(`company_activation`)에서 처리.
+- 실제 생성은 **결제(PaymentConfirmation) + 승인** 둘 다 필요(메모 #008).
 - 대표는 draft를 통째로 승인/반려하거나 부분 수정 요청(→ revising) 가능. *직접 설계하지 않음.*
 
 ## 6. 불변식

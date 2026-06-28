@@ -5,6 +5,9 @@
 ## 핵심 명제
 고객은 "AI 사용량"이 아니라 **"AI 직원의 고용"**에 지불한다. → 좌석/구독 + 사용량의 결합.
 
+> ⚠️ **무료/유료 경계(BUSINESS MEMO #008)**: 무료 = 진단·추천(설계안 Preview까지) / 유료 = 실행·회사 운영.
+> 상세: [free-paid-boundary](free-paid-boundary.md). 업셀: [부족 직원 채용 추천](../specs/employee-recommendation-upsell-spec.md).
+
 ## 3가지 과금 모드
 
 | 모드 | 과금 방식 | 적합 고객 | 우리 수익원 | 원가 통제 |

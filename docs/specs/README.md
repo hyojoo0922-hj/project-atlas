@@ -4,12 +4,14 @@
 > 아키텍처(`../architecture/`)가 "전체 그림"이라면, 스펙은 각 핵심 객체/기관의 "정밀 설계"다.
 > 계층: **Company → Department → Employee → Skill** ([Organization Architecture](../architecture/01-organization-architecture.md)).
 
-## 온보딩 / Customer Journey (개정 #004 — "AI 공동창업자")
-회원가입 = 무료 AI 컨설팅 → 진단 → 회사 자동 설계 → 대표 승인 → 생성.
-- [Customer Journey Specification](customer-journey-spec.md) — 핵심 경험(상태머신)
+## 온보딩 / Customer Journey (개정 #004 + MEMO #008 무료/유료)
+무료(진단·추천, `proposal_ready`까지) → 결제 → 유료(회사 설립·대표 비서·운영).
+- [Customer Journey Specification](customer-journey-spec.md) — 핵심 경험(상태머신, 무료/유료)
 - [AI Business Diagnosis Specification](ai-business-diagnosis-spec.md) — 회사보다 사업을 먼저 진단
-- [Company Creation Flow Specification](company-creation-flow-spec.md) — AI 설계 + 대표 승인
-- (Recommendation Flow는 [Org Recommendation](org-recommendation-spec.md) §3b에 통합) · 우산: [Onboarding Architecture](../architecture/07-onboarding-architecture.md)
+- [Company Creation Flow Specification](company-creation-flow-spec.md) — Proposal(무료)↔Creation(유료, 결제 게이트)
+- [Owner's Assistant Specification](owner-assistant-spec.md) — 대표 비서(설립 후 출근)
+- [Employee Recommendation / Upsell](employee-recommendation-upsell-spec.md) — 부족 직원 채용 추천(수익 모델)
+- 우산: [Onboarding Architecture](../architecture/07-onboarding-architecture.md) · 경계: [free-paid-boundary](../business/free-paid-boundary.md)
 
 ## 조직 객체 (Company 중심 — 개정 #002·#003)
 계층: **Company → CEO → Department → Employee → Skill**

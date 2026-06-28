@@ -77,12 +77,12 @@ Customer
 
 ## 현재 상태
 
-✅ **Sprint 2A 완료** — AI 공동창업자 온보딩(컨설팅→진단→설계→대표 승인→Company 생성). 인메모리, **40 tests green**.
-- 실행: `npm test` · `npm run demo:onboarding` · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
-- 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md) · 전체 로드맵: [roadmap.md](docs/sprints/roadmap.md)
-- 다음: **Sprint 2B**(운영 루프·Health 롤업·Growth·재추천)
+✅ **Sprint 2A 완료 + 무료/유료 경계(MEMO #008)** — AI 공동창업자 온보딩. **무료=진단·추천(설계안 Preview)**, **유료=회사 설립·대표 비서·운영**. 인메모리, **46 tests green**.
+- 실행: `npm test` · `npm run demo:onboarding`(무료/유료 경계) · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
+- 경계: [free-paid-boundary](docs/business/free-paid-boundary.md) · 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md) · 로드맵: [roadmap.md](docs/sprints/roadmap.md)
+- 다음: **Sprint 2B**(운영 루프·결과물·Health·Growth·재추천)
 
-> ⚠️ 아직 **구현하지 않는 것**: 로그인, 결제, 외부 AI API(Gateway는 mock·원가 $0), 영상/이미지 생성.
+> ⚠️ 아직 **구현하지 않는 것**: 로그인, 실제 결제 처리, 외부 AI API(Gateway mock·원가 $0), 직원 Work Loop/결과물(2B), 영상/이미지 생성.
 
 ## 저장소 구조
 

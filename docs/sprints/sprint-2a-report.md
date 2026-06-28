@@ -100,3 +100,29 @@ Departments (진단 우선순위순):
 **대표 계정 → 무료 진단권 → 진단 → 설계안 → 승인 → Company 생성 흐름**:
 `account_created → voucher_activated → diagnosing → designing → recommending → reviewing → approving → created → first_task`
 (고객 행위는 계정 생성·진단권 활성화·컨설팅 응답·**회사 설립 승인** 뿐. 나머지는 AI 공동창업자가 수행.)
+
+---
+
+## 부록 2 · BUSINESS MEMO #008 — 무료/유료 경계 (상용화 구조)
+
+> 단순 UX가 아니라 상용화 구조. Business First. 상세: [free-paid-boundary](../business/free-paid-boundary.md) · [ADR 0010](../adr/0010-free-paid-boundary.md).
+
+**무료 영역 (진단·추천)**: 대표 계정 생성 · 무료 사업진단권(1회) · 사업 진단 · 핵심 병목 · 부서/직원/Skill 추천 · 예상 절약 시간/기대 효과 · **회사 설계안 Preview**. → 종착 `proposal_ready`. (결과물·대표 비서·직원 업무·운영 가능 Company 없음)
+
+**유료 영역 (실행·운영)**: 결제 → Company 설립 · CEO 활성화 · **대표 비서 출근** · 직원 채용 · (2B) 직원 업무 실행·결과물·Work Loop·Credit.
+
+**변경된 상태 흐름**:
+```
+무료:  account_created → voucher_activated → diagnosing → designing → recommending → reviewing → proposal_ready
+유료:  payment_required → company_activation → company_created → assistant_on_duty → first_employee_ready
+```
+
+**Proposal ↔ Creation 분리**: 무료 = `buildCompanyProposal`(Preview+기대효과, 실제 객체 없음). 유료 = `createCompanyFromDraft(…, payment)` — **PaymentConfirmation 없으면 `PaymentRequiredError`**(테스트 검증). 즉 결제 전에는 Company 미생성.
+
+**대표 비서 출근 시점**: 무료엔 없음(공동창업자가 진단·추천만). 유료 설립 후 `assistant_on_duty`에서 출근. 역할=수신·분석·필요직원확인·부족직원추천·업무배분·결과보고. 단, 결과물은 직원이 만든다(비서는 오케스트레이션). Work Loop는 2B.
+
+**직원 추천/업셀링 구조**: 요청 업무에 필요한 직원이 없으면 결과물을 만들지 않고 **채용을 추천**. `packages/staffing` `analyzeStaffing()`(순수) → required/present/missing + upsellMessage. (예: content만 보유 → marketing/design 채용 추천) — 핵심 수익 모델.
+
+**고객 화면 문구 변경**: 무료 CTA(회사 설계안 보기/필요한 직원 확인하기/내 회사 설립 준비하기) ↔ 유료 CTA(이 설계안으로 회사 설립하기/대표 비서 출근시키기/첫 AI 직원 채용하기/계속 회사 운영하기). 무료 "회사 생성 완료" 문구 **제거**(테스트로 검증).
+
+**테스트**: `npm test` → **46 passing**(2A+#008 신규 포함). **데모**: `npm run demo:onboarding`에 무료/유료 경계 출력. **범위**: Sprint 2B(운영 루프·결과물·Work Loop) 미구현.

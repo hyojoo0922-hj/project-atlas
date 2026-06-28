@@ -19,20 +19,33 @@ export const CONSULT_QUESTIONS: ConsultQuestion[] = [
   { key: "grow", ask: "가장 성장시키고 싶은 분야는 무엇인가요?", kind: "text" },
 ];
 
-// 가입 직후 빈 대시보드로 보내지 않고 곧장 진단 흐름으로 진입(IA 원칙 3).
-// account_created → voucher_activated → diagnosing → … → created → first_task
+// BUSINESS MEMO #008 — 무료/유료 경계.
+// 무료: account_created → … → proposal_ready (Company Proposal Ready, 실제 생성 X)
+// 유료: payment_required → company_activation → company_created → assistant_on_duty → first_employee_ready
 const TRANSITIONS: Record<JourneyState, JourneyState[]> = {
+  // 무료
   account_created: ["voucher_activated"],
   voucher_activated: ["diagnosing"],
   diagnosing: ["designing"],
   designing: ["recommending"],
   recommending: ["reviewing"],
-  reviewing: ["approving", "revising"],
-  approving: ["created", "revising"],
+  reviewing: ["proposal_ready", "revising"],
+  proposal_ready: ["payment_required"],   // 무료 종착 → 유료 전환 지점
   revising: ["designing"],
-  created: ["first_task"],
-  first_task: [],
+  // 유료 (결제 이후)
+  payment_required: ["company_activation"],
+  company_activation: ["company_created"],
+  company_created: ["assistant_on_duty"],
+  assistant_on_duty: ["first_employee_ready"],
+  first_employee_ready: [],
 };
+
+/** 무료 영역 상태 집합 (이 경계까지가 무료) */
+const FREE_STATES = new Set<JourneyState>([
+  "account_created", "voucher_activated", "diagnosing", "designing",
+  "recommending", "reviewing", "proposal_ready", "revising",
+]);
+export const isFreeState = (s: JourneyState): boolean => FREE_STATES.has(s);
 
 export class JourneyTransitionError extends Error {}
 export class VoucherError extends Error {}
@@ -74,60 +87,85 @@ export class CustomerJourney {
     this.state = next;
     this.history.push(next);
   }
-  get isCreated(): boolean { return this.state === "created" || this.state === "first_task"; }
+  /** 무료 산출(설계안 Preview) 완료 — 실제 회사 생성 아님 */
+  get isProposalReady(): boolean { return this.state === "proposal_ready"; }
+  /** 유료 회사 생성됨 */
+  get isCompanyCreated(): boolean {
+    return ["company_created", "assistant_on_duty", "first_employee_ready"].includes(this.state);
+  }
 }
 
 // ───────────────────────── 고객 화면 3요소 (IA 원칙 4·6·7·8·9) ─────────────────────────
+// 무료 단계에서는 "회사 생성 완료" 류 표현을 쓰지 않는다(메모 #008 §4).
 const STAGE_LABEL: Record<JourneyState, string> = {
+  // 무료
   account_created: "대표 계정 생성",
   voucher_activated: "무료 사업진단권 활성화",
   diagnosing: "AI 사업 진단",
   designing: "회사 설계안 준비",
   recommending: "회사 설계안 준비",
   reviewing: "회사 설계안 검토",
-  approving: "회사 설립 승인",
-  created: "회사 생성 완료",
-  first_task: "첫 업무 시작",
+  proposal_ready: "회사 설계안 준비 완료",   // 무료 종착 (생성 아님)
   revising: "설계안 재작성",
+  // 유료
+  payment_required: "회사 설립 준비(결제)",
+  company_activation: "회사 설립 진행",
+  company_created: "회사 설립 완료",
+  assistant_on_duty: "대표 비서 출근",
+  first_employee_ready: "첫 AI 직원 준비",
 };
 
 export interface CustomerViewContext {
   ownerName?: string;
   companyName?: string;
   diagnosis?: Diagnosis;       // 점수가 아닌 '판단'을 보여주기 위해 사용
-  firstTaskText?: string;
+  expectedEffectText?: string; // 무료: 예상 절약 시간/기대 효과
+  firstEmployeeText?: string;
 }
 
 /** 현재 단계 / 공동창업자의 판단 / 대표의 다음 행동 — 항상 노출되는 3요소 */
 export function buildCustomerView(state: JourneyState, ctx: CustomerViewContext = {}): CustomerView {
   const judgment = (): string => {
     switch (state) {
+      // 무료 (진단·추천만, 결과물 없음)
       case "account_created": return `${ctx.ownerName ?? "대표"}님, 함께 회사를 세울 준비가 되었습니다.`;
       case "voucher_activated": return "무료 사업진단권 1회가 활성화되었습니다. 바로 진단을 시작할 수 있어요.";
       case "diagnosing": return "지금 사업을 진단하고 있습니다.";
       case "designing":
       case "recommending":
       case "reviewing":
-      case "approving":
-        // 점수가 아니라 '우선순위 판단'으로 보여준다(IA 원칙 6)
+        // 점수가 아니라 '우선순위 판단'으로 보여준다
         return ctx.diagnosis?.rationale[0] ?? ctx.diagnosis?.bottleneck ?? "지금 사업에 맞는 회사를 설계했습니다.";
-      case "created": return `${ctx.companyName ?? "회사"}가 만들어졌습니다. 이제 첫 업무를 시작해 보세요.`;
-      case "first_task": return ctx.firstTaskText ?? "첫 업무를 맡겨 회사를 움직여 보세요.";
+      case "proposal_ready":
+        return ctx.expectedEffectText
+          ? `설계안이 준비됐습니다. ${ctx.expectedEffectText}`
+          : "회사 설계안(미리보기)이 준비됐습니다. 설립하면 실제로 운영을 시작합니다.";
       case "revising": return "설계안을 다시 다듬고 있습니다.";
+      // 유료 (실행·운영)
+      case "payment_required": return "회사를 설립하면 대표 비서가 출근하고 직원이 실제 업무를 시작합니다.";
+      case "company_activation": return "회사를 설립하고 있습니다.";
+      case "company_created": return `${ctx.companyName ?? "회사"}가 설립되었습니다.`;
+      case "assistant_on_duty": return "대표 비서가 출근했습니다. 요청을 받아 직원에게 업무를 배분합니다.";
+      case "first_employee_ready": return ctx.firstEmployeeText ?? "첫 AI 직원이 준비됐습니다.";
     }
   };
   const nextAction = (): string => {
     switch (state) {
+      // 무료 CTA
       case "account_created": return "무료 사업진단권 활성화하기";
       case "voucher_activated": return "사업 진단 시작하기";
       case "diagnosing": return "진단 결과 기다리기";
       case "designing":
-      case "recommending": return "설계안 기다리기";
-      case "reviewing": return "설계안 검토하기";
-      case "approving": return "이 설계안으로 내 회사 만들기";   // IA 원칙 7
-      case "created": return "첫 업무 맡기기";                    // IA 원칙 8
-      case "first_task": return "계속 회사 운영하기";            // IA 원칙 9
+      case "recommending": return "회사 설계안 보기";
+      case "reviewing": return "필요한 직원 확인하기";
+      case "proposal_ready": return "이 설계안으로 회사 설립하기";   // 유료 전환 지점
       case "revising": return "수정된 설계안 기다리기";
+      // 유료 CTA
+      case "payment_required": return "이 설계안으로 회사 설립하기";
+      case "company_activation": return "설립 진행 기다리기";
+      case "company_created": return "대표 비서 출근시키기";
+      case "assistant_on_duty": return "첫 AI 직원 채용하기";
+      case "first_employee_ready": return "계속 회사 운영하기";
     }
   };
   return { stage: STAGE_LABEL[state], cofounderJudgment: judgment(), nextAction: nextAction() };

@@ -194,7 +194,52 @@ export interface CustomerView {
   nextAction: string;         // 대표의 다음 행동 (CTA)
 }
 
-// Customer Journey 상태 (UX Sprint #001 IA 반영)
+// ───────────────────────── 무료/유료 경계 (BUSINESS MEMO #008) ─────────────────────────
+/** 무료 산출물: 회사 설계안 Preview + 기대 효과 (실제 Company 생성 아님) */
+export interface ExpectedEffect {
+  savedHoursPerWeek: number;
+  summary: string[];
+}
+export interface CompanyProposal {
+  id: Id;
+  draftId: Id;
+  expectedEffect: ExpectedEffect;
+  designPreview: {
+    companyName: string;
+    departments: { name: string; priority: number; employeeTitles: string[]; skills: string[] }[];
+  };
+  status: "proposal_ready";   // 무료 종착
+}
+
+/** 유료 전환 결제 확인 */
+export interface PaymentConfirmation {
+  id: Id;
+  plan: string;
+  confirmed: boolean;
+}
+
+/** 대표 비서 — 유료(회사 설립) 후 출근 */
+export interface OwnerAssistant {
+  id: Id;
+  companyId: Id;
+  status: "on_duty";
+  role: string[];
+}
+
+/** 업셀링 — 부족 직원 채용 추천(순수 분석, 결과물 미생성) */
+export interface StaffingAnalysis {
+  requiredRoleFamilies: RoleFamily[];
+  presentRoleFamilies: RoleFamily[];
+  missingRoleFamilies: RoleFamily[];
+  canPartial: boolean;
+  upsellMessage: string;
+}
+
+// Customer Journey 상태 (BUSINESS MEMO #008 — 무료/유료 분리)
 export type JourneyState =
+  // 무료 (진단·추천)
   | "account_created" | "voucher_activated" | "diagnosing" | "designing"
-  | "recommending" | "reviewing" | "approving" | "created" | "first_task" | "revising";
+  | "recommending" | "reviewing" | "proposal_ready" | "revising"
+  // 유료 (실행·운영)
+  | "payment_required" | "company_activation" | "company_created"
+  | "assistant_on_duty" | "first_employee_ready";

@@ -8,25 +8,30 @@
 **상태머신**으로 관리한다. 고객은 *설계하지 않고*, 답하고·보고·승인한다.
 
 ## 2. 여정 단계 (상태)
-CPO UX Sprint #001 IA 반영 — "대표 계정 생성 → 무료 사업진단권 → 진단 → 설계안 → 회사 설립 승인 → 생성 → 첫 업무":
+CPO UX #001 + BUSINESS MEMO #008(무료/유료 경계) 반영:
 ```
-account_created → voucher_activated → diagnosing → designing → recommending
-   → reviewing → approving → created → first_task
-                    └─(반려)→ revising
+무료(진단·추천):  account_created → voucher_activated → diagnosing → designing
+                    → recommending → reviewing → proposal_ready   └─(반려)→ revising
+유료(실행·운영):  payment_required → company_activation → company_created
+                    → assistant_on_duty → first_employee_ready
 ```
-| 단계 | 고객이 하는 것 | 시스템이 하는 것 | 산출 |
-|---|---|---|---|
-| **account_created** | 대표 계정 생성(회원가입 X) | 계정 + 무료 사업진단권(1회) 부여 | OwnerAccount |
-| **voucher_activated** | 진단권 활성화 | 곧장 진단 흐름 진입(빈 대시보드 금지) | DiagnosisVoucher(active) |
-| **diagnosing** | 컨설팅 응답 | 진단권 소진 + [AI 사업 진단](ai-business-diagnosis-spec.md) | Diagnosis |
-| **designing / recommending** | 대기 | 진단 기반 설계 + 부서·직원·Skill 추천 | DesignDraft / [OrgRecommendation](org-recommendation-spec.md) |
-| **reviewing** | 설계안 검토 | 설계안 요약 제시(내부지표 숨김) | — |
-| **approving** | **회사 설립 승인** (CTA "이 설계안으로 내 회사 만들기") | [Approval Workflow](approval-workflow-spec.md) 창업 승인 | ApprovalRequest(approved) |
-| **created** | 회사 입장 | [Company Auto Creation](company-creation-flow-spec.md) | Company(+CEO/Dept/Employee) |
-| **first_task** | (CTA "첫 업무 맡기기") | 첫 업무 추천 제시 | FirstTaskSuggestion |
-| **revising** | 수정 요청 | 설계 재생성 | 새 DesignDraft |
+| 영역 | 단계 | 고객이 하는 것 | 시스템 | 산출 |
+|---|---|---|---|---|
+| 무료 | **account_created** | 대표 계정 생성(회원가입 X) | 계정 + 무료 사업진단권(1회) | OwnerAccount |
+| 무료 | **voucher_activated** | 진단권 활성화 | 곧장 진단 진입(빈 대시보드 금지) | Voucher(active) |
+| 무료 | **diagnosing** | 컨설팅 응답 | 진단권 소진 + [AI 사업 진단](ai-business-diagnosis-spec.md) | Diagnosis |
+| 무료 | **designing/recommending** | 대기 | 설계 + 부서·직원·Skill 추천 | [OrgRecommendation](org-recommendation-spec.md) |
+| 무료 | **reviewing** | 설계안 검토 | 설계안 요약(내부지표 숨김) | DesignDraft |
+| 무료 | **proposal_ready** ⛳ | 설계안 Preview 확인 | 기대효과 + Preview (실제 생성 X) | **CompanyProposal** |
+| ─ | **revising** | 수정 요청 | 설계 재생성 | 새 DesignDraft |
+| 유료 | **payment_required** | **결제** (CTA "이 설계안으로 회사 설립하기") | 결제 게이트 | PaymentConfirmation |
+| 유료 | **company_activation** | — | 창업 승인 | ApprovalRequest |
+| 유료 | **company_created** | — | [Company Creation](company-creation-flow-spec.md) | Company(+CEO/Dept/Employee) |
+| 유료 | **assistant_on_duty** | (CTA "대표 비서 출근시키기") | [대표 비서](owner-assistant-spec.md) 출근 | OwnerAssistant |
+| 유료 | **first_employee_ready** | (CTA "첫 AI 직원 채용/계속 운영") | 첫 직원 준비 | — |
 
-> **고객 화면 3요소(항상 노출)**: 현재 단계 · 공동창업자의 판단(점수 아닌 우선순위) · 대표의 다음 행동(CTA).
+> **무료 경계 = `proposal_ready`** (실제 Company 생성·대표 비서·결과물 없음). 자세히: [free-paid-boundary](../business/free-paid-boundary.md).
+> **고객 3요소(항상)**: 현재 단계 · 공동창업자의 판단(점수 아님) · 대표의 다음 행동(CTA).
 > 숨기는 내부 요소: Skill Lifecycle · Matching Score · Certification · Model · Token · CostLedger.
 
 ## 3. 데이터 (개념)

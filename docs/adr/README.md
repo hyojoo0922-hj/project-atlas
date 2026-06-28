@@ -13,6 +13,7 @@
 | [0007](0007-company-centric-architecture.md) | Company 중심 조직 아키텍처(Company→Dept→Employee→Skill) | Accepted |
 | [0008](0008-ceo-object-and-approval-workflow.md) | CEO 객체·Approval Workflow·살아있는 조직 | Accepted |
 | [0009](0009-onboarding-and-customer-journey.md) | 온보딩·Customer Journey·AI 사업진단 기반 회사 자동설계 | Accepted |
+| [0010](0010-free-paid-boundary.md) | 무료/유료 경계 — Company Proposal↔Creation 분리(결제 게이트) | Accepted |
 
 > 새 ADR: `NNNN-title.md`로 추가하고 이 표를 갱신.
 > ⭐ 헌법 개정: [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)(ADR 0005), [#002](../constitution/AMENDMENT-002-company-centric-organization.md)(ADR 0007), [#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md)(ADR 0008), [#004 AI 공동창업자](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md)(ADR 0009).

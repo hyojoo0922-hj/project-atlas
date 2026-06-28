@@ -3,7 +3,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { runScenario } from "./scenario.ts";
 import { renderOperatorHQ, renderCustomer } from "./render.ts";
-import { runOnboardingScenario } from "./onboarding-scenario.ts";
+import { runFreeScenario, runFullScenario } from "./onboarding-scenario.ts";
 import { renderOnboardingCustomer, renderOnboardingOperator } from "./render-onboarding.ts";
 
 mkdirSync("apps/operator-console/public", { recursive: true });
@@ -14,10 +14,9 @@ const r = runScenario();
 writeFileSync("apps/operator-console/public/index.html", renderOperatorHQ(r.orch, r));
 writeFileSync("apps/customer-portal/public/index.html", renderCustomer(r.orch, r));
 
-// Sprint 2A — 온보딩 스냅샷
-const o = runOnboardingScenario();
-writeFileSync("apps/operator-console/public/onboarding.html", renderOnboardingOperator(o));
-writeFileSync("apps/customer-portal/public/onboarding.html", renderOnboardingCustomer(o));
+// Sprint 2A + MEMO #008 — 온보딩 스냅샷 (고객=무료영역 / 운영자=무료+유료)
+writeFileSync("apps/customer-portal/public/onboarding.html", renderOnboardingCustomer(runFreeScenario()));
+writeFileSync("apps/operator-console/public/onboarding.html", renderOnboardingOperator(runFullScenario()));
 
 console.log("✅ HTML 스냅샷 생성:");
 console.log("   - apps/operator-console/public/index.html (Operator HQ · 운영루프)");

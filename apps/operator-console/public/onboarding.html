@@ -4,34 +4,36 @@
 .card{background:#171a21;border:1px solid #232833;border-radius:12px;padding:16px;margin:10px 0}
 .kv{color:#9aa4b2}.tag{display:inline-block;background:#1f2530;border-radius:6px;padding:1px 8px;margin:2px;font-size:12px}
 .ok{color:#5bd6a0}.muted{color:#6b7280}
-.cta{display:inline-block;background:#5bd6a0;color:#0f1115;font-weight:700;border-radius:8px;padding:8px 14px;margin-top:8px}
+.cta{display:inline-block;background:#5bd6a0;color:#0f1115;font-weight:700;border-radius:8px;padding:8px 14px;margin:6px 6px 0 0}
+.cta2{display:inline-block;background:#1f2530;color:#cfd6df;border:1px solid #2c3340;border-radius:8px;padding:8px 14px;margin:6px 6px 0 0}
 .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .three .b{background:#13182088;border:1px solid #232833;border-radius:10px;padding:10px}
 .lbl{font-size:11px;color:#6b7280;text-transform:uppercase}
 .step{display:flex;gap:8px;align-items:center;margin:4px 0}.dot{width:8px;height:8px;border-radius:50%;background:#5bd6a0;display:inline-block}
+.dotp{background:#e3cf9f}
 .note{background:#13251f;border:1px solid #1d3a30;border-radius:8px;padding:10px 14px;color:#9fe3c4;font-size:13px}
-.voucher{background:#241f13;border:1px solid #3a3320;border-radius:10px;padding:10px 14px;color:#e3cf9f}</style>
+.voucher{background:#241f13;border:1px solid #3a3320;border-radius:10px;padding:10px 14px;color:#e3cf9f}
+.pay{background:#1a1530;border:1px solid #2c2350;border-radius:10px;padding:10px 14px;color:#c9b8ff}</style>
 </head><body><div class="wrap">
-  <h1>🛠️ Operator HQ · Onboarding</h1>
-  <div class="note">운영자는 내부 구조(진단 점수·트리·Audit)를 본다. (2B: Health/Growth/재추천 추가 예정)</div>
+  <h1>🛠️ Operator HQ · Onboarding (무료/유료 경계)</h1>
+  <div class="note">무료=진단·추천(proposal_ready) / 유료=설립·운영. 내부지표는 운영자 화면에만.</div>
 
   <h2>대표 계정 / 진단권</h2>
-  <div class="card kv">로마티 대표 · voucher 1/1 (active true)</div>
+  <div class="card kv">로마티 대표 · voucher 1/1</div>
 
-  <h2>Customer Journey 상태머신</h2>
-  <div class="card"><div class="step"><span class="dot"></span>account_created</div><div class="step"><span class="dot"></span>voucher_activated</div><div class="step"><span class="dot"></span>diagnosing</div><div class="step"><span class="dot"></span>designing</div><div class="step"><span class="dot"></span>recommending</div><div class="step"><span class="dot"></span>reviewing</div><div class="step"><span class="dot"></span>approving</div><div class="step"><span class="dot"></span>created</div><div class="step"><span class="dot"></span>first_task</div></div>
+  <h2>Customer Journey (무료→유료)</h2>
+  <div class="card"><div class="step"><span class="dot "></span>account_created <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>voucher_activated <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>diagnosing <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>designing <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>recommending <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>reviewing <span class="kv">(무료)</span></div><div class="step"><span class="dot "></span>proposal_ready <span class="kv">(무료)</span></div><div class="step"><span class="dot dotp"></span>payment_required <span class="kv">(유료)</span></div><div class="step"><span class="dot dotp"></span>company_activation <span class="kv">(유료)</span></div><div class="step"><span class="dot dotp"></span>company_created <span class="kv">(유료)</span></div><div class="step"><span class="dot dotp"></span>assistant_on_duty <span class="kv">(유료)</span></div><div class="step"><span class="dot dotp"></span>first_employee_ready <span class="kv">(유료)</span></div></div>
 
   <h2>AI Business Diagnosis (점수 — 내부)</h2>
   <div class="card"><div>operations <b>4</b> — <span class="kv">시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선</span></div><div>marketing <b>3</b> — <span class="kv">핵심 문제가 수요 창출(신규 고객 유입); 온라인 미운영 상태에서 온라인 성장 목표 → 채널 구축 필요</span></div><div>content <b>1.5</b> — <span class="kv">브랜드 미보유 → 브랜드 보이스/콘텐츠 정립 필요</span></div></div>
 
-  <h2>설계안 → 생성된 조직</h2>
-  <div class="card"><b>로마티 카페</b> (cafe, 초기 성장)
-   · CEO 위임 medium/리스크 medium<br>
-   부서: <span class="tag">1.Operations</span><span class="tag">2.Marketing</span><br>
-   직원: <span class="tag">운영 매니저 (operations, junior)</span><span class="tag">콘텐츠 라이터 (content, junior)</span><br><span class="kv">트리: company · ceo · department · employee · department · employee</span></div>
+  <h2>무료 산출 — Company Proposal</h2>
+  <div class="card">기대효과 주당 12h · 부서 Operations, Marketing <span class="kv">(실제 Company 아직 없음)</span></div>
 
-  <h2>첫 업무 추천</h2>
-  <div class="card kv">Operations의 운영 매니저에게 첫 업무(inventory-mgmt)를 맡겨보세요.</div>
+  <h2>유료 전환 — 결제 → 설립</h2>
+  <div class="pay">💳 운영 플랜 · confirmed true</div>
+  <div class="card"><b>로마티 카페</b> 설립 · 부서 <span class="tag">1.Operations</span><span class="tag">2.Marketing</span><br>
+   직원: <span class="tag">운영 매니저 (operations)</span><span class="tag">콘텐츠 라이터 (content)</span><br>🧑‍💼 대표 비서: on_duty (6 roles) · 첫 직원: 운영 매니저</div>
 
-  <h2>Audit</h2>
-  <div class="card"><div class="kv">• <b>account</b> — 대표 계정 생성: 로마티 대표</div><div class="kv">• <b>voucher</b> — 무료 사업진단권 활성화(계정당 1회)</div><div class="kv">• <b>diagnosis</b> — 핵심 병목 = 운영 체계 (시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선)</div><div class="kv">• <b>design</b> — 설계안 생성(draft): 로마티 카페</div><div class="kv">• <b>approval</b> — 회사 설립 승인 완료(founding)</div><div class="kv">• <b>created</b> — Company 생성: 로마티 카페</div><div class="kv">• <b>first_task</b> — Operations의 운영 매니저에게 첫 업무(inventory-mgmt)를 맡겨보세요.</div></div></div></body></html>
+  <h2>Audit (무료)</h2>
+  <div class="card"><div class="kv">• <b>account</b> — 대표 계정 생성: 로마티 대표</div><div class="kv">• <b>voucher</b> — 무료 사업진단권 활성화(계정당 1회)</div><div class="kv">• <b>diagnosis</b> — 핵심 병목 = 운영 체계 (시간 소모가 운영성 업무(재고/발주 관리)에 집중; 소규모 인력 대비 운영 부하 → 체계 우선)</div><div class="kv">• <b>proposal</b> — 회사 설계안 Preview 준비: 로마티 카페 (추천 부서 2개 구성 시 주당 약 12시간 절약 예상)</div><div class="kv">• <b>payment</b> — 결제 확인: 운영 플랜 (confirmed=true)</div><div class="kv">• <b>activation</b> — 회사 설립 승인(founding)</div><div class="kv">• <b>created</b> — Company 설립: 로마티 카페</div><div class="kv">• <b>assistant</b> — 대표 비서 출근</div><div class="kv">• <b>first_employee</b> — 첫 AI 직원 준비: 운영 매니저</div></div></div></body></html>

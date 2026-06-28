@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
-  ALPHA_PASS, approveTask, dashboard, executeTask, hire, login, provideMaterial,
-  registerTask, reviseTask,
+  ALPHA_PASS, approveTask, dashboard, executeTask, hire, login, proceedWithPartial,
+  provideMaterial, registerTask, reviseTask, taskView,
 } from "../src/app.ts";
 
 const tmp = () => {
@@ -77,6 +77,44 @@ test("승인 / 수정 요청 상태 전이", () => {
   const rv = reviseTask(s, t2.id, "더 캐주얼하게")!;
   assert.equal(rv.status, "revise");
   assert.equal(rv.results.length, 0);                     // 수정 요청 시 결과 초기화
+});
+
+test("일부 자료만 제공 → '이대로 진행' 가능 표시(canProceedPartial)", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");     // social_post: brand-voice + channel
+  provideMaterial(s, t.id, "brand-voice", "text", "따뜻하게");  // 1/2 제공
+  const v = taskView(s, s.data.tasks.find((x) => x.id === t.id)!);
+  assert.equal(v.status, "awaiting_materials");
+  assert.equal(v.canProceedPartial, true);             // 일부만으로 진행 가능
+});
+
+test("'이대로 진행하기' → 초안 생성 + 일부 자료 부족 표시(partialMaterials)", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "따뜻하게");  // 일부만
+  const done = proceedWithPartial(s, t.id)!;
+  assert.equal(done.status, "delivered");
+  assert.ok(done.results.length >= 1);
+  assert.equal(done.results[0]!.state, "draft");       // 초안
+  assert.equal(done.partialMaterials, true);           // 부족 표시
+});
+
+test("Trust First 하한선: 자료 0%면 '이대로 진행'해도 실행되지 않고 정보 요청 유지", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");     // 자료 전혀 없음
+  const r = proceedWithPartial(s, t.id)!;
+  assert.equal(r.results.length, 0);                    // 추측 안 함
+  assert.equal(r.status, "awaiting_materials");         // 정보 요청 유지
+});
+
+test("자료를 충분히 제공하면 partialMaterials 없이 최종본", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  const done = executeTask(s, t.id)!;
+  assert.equal(done.results[0]!.state, "final");
+  assert.ok(!done.partialMaterials);
 });
 
 test("채용 → 추천 채용에서 제거, 직원 출근 반영", () => {

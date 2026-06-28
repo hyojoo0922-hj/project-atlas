@@ -6,9 +6,11 @@ import type {
   Company, CompanyEmployee, Department, Id, OutputType, RoleFamily,
 } from "../../../packages/shared-types/src/index.ts";
 
-/** 업무 상태 전이: 자료 대기 → 실행 가능 → (실행) → 결과 완료 → 승인/수정. 직원 부족 시 needs_hire. */
+/** 업무 상태 전이: 자료 대기 → 실행 가능 → (실행) → 결과 완료 → 승인/수정. 직원 부족 시 needs_hire.
+ *  ready_with_missing_info: 일부 자료 미제공이지만 대표가 "이대로 진행"을 선택해 초안 진행 가능. */
 export type TaskStatus =
-  | "needs_hire" | "awaiting_materials" | "ready" | "delivered" | "approved" | "revise";
+  | "needs_hire" | "awaiting_materials" | "ready" | "ready_with_missing_info"
+  | "delivered" | "approved" | "revise";
 
 /** 대표가 제공한 자료 (Company/Brand Memory에 연결) */
 export interface Material {
@@ -41,6 +43,8 @@ export interface AlphaTask {
   results: TaskResult[];
   reviseNote?: string;
   feedback?: { overall: number; comment?: string };
+  proceedAnyway?: boolean;       // 대표가 "이대로 진행" 선택(일부 자료 미제공 허용)
+  partialMaterials?: boolean;    // 결과가 일부 자료 부족 상태로 생성됨
 }
 
 export interface AlphaData {

@@ -54,10 +54,15 @@ export function recompute(store: AlphaStore, task: AlphaTask): void {
   task.missingRoles = uniq(plans.filter((p) => p.status === "need_staff").flatMap((p) => p.missingRoleFamilies));
   const executable = plans.some((p) => p.status === "executable");
 
+  // 일부 자료라도 있어 초안 생성이 가능한 subtask (정보 0%는 불가 — Trust First 하한선)
+  const partialPossible = plans.some((p) => p.status === "need_info" && p.readinessScore > 0);
+  const blockedInfo = task.missingInfo.length > 0;
+
   if (task.results.length) task.status = "delivered";
-  else if (task.missingInfo.length) task.status = "awaiting_materials";
-  else if (task.reviseNote && executable) task.status = "revise";   // 수정 요청(재실행 대기)
-  else if (executable) task.status = "ready";          // 추천 채용은 비차단
+  else if (executable && !blockedInfo) task.status = task.reviseNote ? "revise" : "ready"; // 충분
+  else if (task.proceedAnyway && (executable || partialPossible)) task.status = "ready_with_missing_info"; // 이대로 진행
+  else if (blockedInfo) task.status = "awaiting_materials";   // 기본: 자료 더 필요
+  else if (executable) task.status = task.reviseNote ? "revise" : "ready";
   else if (task.missingRoles.length) task.status = "needs_hire";
   else task.status = "ready";
 }
@@ -81,24 +86,50 @@ export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   recompute(store, task);
-  if (task.status !== "ready" && task.status !== "revise") return task; // 실행 불가 (자료/직원 부족)
+  const runnable = ["ready", "revise", "ready_with_missing_info"].includes(task.status);
+  if (!runnable) return task; // 실행 불가 (자료가 너무 부족하거나 직원 없음)
+
+  const forced = task.status === "ready_with_missing_info" || !!task.proceedAnyway;
   const info = new Set(store.data.companyInfo);
   const plans = toSubTasks(task.outputTypes).map((s) => planSubTask(s, store.data.employees, info));
   const results: TaskResult[] = [];
+  let partial = false;
   for (const p of plans) {
-    if (p.status !== "executable") continue;
-    results.push({
-      outputType: p.subTask.outputType,
-      by: p.selectedEmployeePersona!,
-      state: p.confidence === "final" ? "final" : "draft",
-      content: mockContent(p.subTask.outputType, store.data.company.name, p.selectedEmployeePersona!),
-    });
+    if (p.status === "executable") {
+      // 충분(final) 또는 일부(draft) — readiness가 결과 등급을 결정
+      results.push(mkResult(store, p, p.confidence === "final" ? "final" : "draft"));
+      if (p.confidence !== "final") partial = true;
+    } else if (forced && p.status === "need_info" && p.readinessScore > 0) {
+      // 일부 자료만으로 초안 진행 (Trust First: 0%는 제외)
+      results.push(mkResult(store, p, "draft"));
+      partial = true;
+    } else if (p.status !== "executable") {
+      partial = true; // 직원 부족/정보 0% 등으로 빠진 부분이 있음
+    }
   }
   task.results = results;
+  task.partialMaterials = partial && results.length > 0;
   task.reviseNote = undefined;
   recompute(store, task);
   store.save();
   return task;
+}
+
+function mkResult(store: AlphaStore, p: ReturnType<typeof planSubTask>, state: "final" | "draft"): TaskResult {
+  return {
+    outputType: p.subTask.outputType,
+    by: p.selectedEmployeePersona ?? roleTitle(p.subTask.roleFamily),
+    state,
+    content: mockContent(p.subTask.outputType, store.data.company.name, p.selectedEmployeePersona ?? roleTitle(p.subTask.roleFamily)),
+  };
+}
+
+/** "이대로 진행하기" — 일부 자료 미제공이어도 초안 진행 승인 후 실행. */
+export function proceedWithPartial(store: AlphaStore, taskId: Id): AlphaTask | null {
+  const task = store.data.tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  task.proceedAnyway = true;
+  return executeTask(store, taskId);
 }
 
 export function approveTask(store: AlphaStore, taskId: Id, feedback?: AlphaTask["feedback"]): boolean {
@@ -160,25 +191,32 @@ export function dashboard(store: AlphaStore) {
       ...c, hired: presentRoles.has(c.roleFamily),
     })),
     recommendedHires,
-    tasks: d.tasks.slice(-12).reverse().map((t) => taskView(t)),
+    tasks: d.tasks.slice(-12).reverse().map((t) => taskView(store, t)),
   };
 }
 
-export function taskView(t: AlphaTask) {
+export function taskView(store: AlphaStore, t: AlphaTask) {
+  // 일부 자료만으로 진행 가능한가 (need_info 중 readiness>0 존재) — Trust First 하한선 적용
+  const info = new Set(store.data.companyInfo);
+  const plans = toSubTasks(t.outputTypes).map((s) => planSubTask(s, store.data.employees, info));
+  const canProceedPartial = t.status === "awaiting_materials"
+    && plans.some((p) => p.status === "need_info" && p.readinessScore > 0);
   return {
     id: t.id, title: t.title, status: t.status, statusLabel: STATUS_LABEL[t.status],
-    assignees: uniq(t.requiredRoles.filter((r) => true)).map(roleTitle), // 표시용
+    assignees: uniq(t.requiredRoles).map(roleTitle),
     neededMaterials: t.missingInfo.map((k) => ({ key: k, label: infoLabel(k) })),
     recommendedHires: t.missingRoles.map((r) => ({ roleFamily: r, title: roleTitle(r) })),
     provided: t.materials.map((m) => ({ label: infoLabel(m.infoKey), kind: m.kind, value: m.value })),
     results: t.results,
+    partialMaterials: !!t.partialMaterials,
+    canProceedPartial,
     feedback: t.feedback ?? null,
   };
 }
 
 export const STATUS_LABEL: Record<TaskStatus, string> = {
   needs_hire: "직원 필요", awaiting_materials: "자료 대기", ready: "실행 가능",
-  delivered: "결과 완료", approved: "승인됨", revise: "수정 요청",
+  ready_with_missing_info: "일부 자료로 진행", delivered: "결과 완료", approved: "승인됨", revise: "수정 요청",
 };
 
 export function onboardingAsks(roleFamily: RoleFamily): string[] {

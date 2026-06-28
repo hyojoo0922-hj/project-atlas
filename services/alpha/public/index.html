@@ -121,30 +121,39 @@ function taskCard(t){
   let inner=`<div class="row between"><div class="b">${esc(t.title)}</div>${statusPill(t.status)}</div>
     <div class="muted small mt">담당: ${t.assignees.map(esc).join(", ")||"-"}</div>`;
 
-  // 필요 자료 (자료 제공 입력)
+  // 제공 완료 자료
+  if(t.provided.length){
+    inner+=`<div class="mt small">제공 완료: ${t.provided.map(p=>`<span class="pill p-ok">${esc(p.label)}${p.kind!=="text"?`·${p.kind}`:""}</span>`).join(" ")}</div>`;
+  }
+  // 필요 자료 (미제공 — 자료 제공 입력)
   if(t.neededMaterials.length){
-    inner+=`<div class="mt b small">필요 자료 (추측하지 않습니다)</div>`;
+    inner+=`<div class="mt b small">필요 자료 (미제공 · 추측하지 않습니다)</div>`;
     t.neededMaterials.forEach(m=>{
       inner+=`<div class="row mt" style="gap:6px">
-        <span class="tag" style="min-width:84px">${esc(m.label)}</span>
+        <span class="tag p-wait" style="min-width:84px">${esc(m.label)} · 미제공</span>
         <input id="mat_${t.id}_${m.key}" placeholder="텍스트 또는 URL">
         <input type="file" id="file_${t.id}_${m.key}" style="max-width:120px">
         <button class="btn sm" onclick="provide('${t.id}','${m.key}')">제공</button></div>`;
     });
-  }
-  // 제공된 자료
-  if(t.provided.length){
-    inner+=`<div class="mt small muted">제공됨: ${t.provided.map(p=>esc(p.label)+(p.kind!=="text"?`(${p.kind})`:"")).join(", ")}</div>`;
+    // 일부만 제공된 상태에서도 진행 가능 — "이대로 진행하기"
+    if(t.canProceedPartial){
+      inner+=`<div class="mt small" style="color:#e8c772">일부 자료가 아직 제공되지 않았습니다. 현재 자료만으로도 초안 진행은 가능하지만, 자료를 더 제공할수록 결과물이 더 정확해집니다.</div>
+        <div class="mt"><button class="btn2" onclick="proceed('${t.id}')">이대로 초안으로 진행하기</button></div>`;
+    }
   }
   // 추천 채용 (업무 기준)
   if(t.recommendedHires.length){
     inner+=`<div class="mt small">이 업무엔 더 필요해요: `+t.recommendedHires.map(r=>`<button class="btn2 sm" onclick="hire('${r.roleFamily}')">${esc(r.title)} 채용</button>`).join(" ")+`</div>`;
   }
-  // 실행 버튼 (실행 가능 / 수정 요청 후 재실행)
-  if(t.status==="ready"||t.status==="revise") inner+=`<div class="mt"><button class="btn" onclick="execute('${t.id}')">${t.status==="revise"?"수정해서 다시 실행":"직원에게 실행시키기"}</button></div>`;
+  // 실행 버튼 (실행 가능 / 일부 자료로 진행 / 수정 요청 후 재실행)
+  if(t.status==="ready"||t.status==="revise"||t.status==="ready_with_missing_info"){
+    const lbl=t.status==="revise"?"수정해서 다시 실행":(t.status==="ready_with_missing_info"?"이대로 초안으로 진행하기":"직원에게 실행시키기");
+    inner+=`<div class="mt"><button class="btn" onclick="${t.status==="ready_with_missing_info"?"proceed":"execute"}('${t.id}')">${lbl}</button></div>`;
+  }
   // 결과물 카드
   if(t.results.length){
     inner+=`<div class="mt b small">결과물</div>`;
+    if(t.partialMaterials) inner+=`<div class="small" style="color:#e8c772">일부 자료가 부족한 상태에서 초안으로 작성되었습니다. 자료를 더 제공하면 다시 실행해 품질을 높일 수 있습니다.</div>`;
     t.results.forEach(r=>{
       inner+=`<div class="result"><div class="b small">${esc(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · ${esc(r.by)}</div>${esc(r.content)}</div>`;
     });
@@ -164,6 +173,7 @@ async function provide(taskId,key){
   const r=await api("/api/provide",{taskId,infoKey:key,kind,value});DB=r.dashboard;render();
 }
 async function execute(taskId){const r=await api("/api/execute",{taskId});DB=r.dashboard;render();}
+async function proceed(taskId){const r=await api("/api/proceed",{taskId});DB=r.dashboard;render();}
 async function hire(roleFamily){const r=await api("/api/hire",{roleFamily});DB=r.dashboard;render();}
 async function approve(taskId){const r=await api("/api/approve",{taskId,overall:5});DB=r.dashboard;render();}
 async function revise(taskId){const note=prompt("어떻게 수정할까요?");if(!note)return;const r=await api("/api/revise",{taskId,note});DB=r.dashboard;render();}

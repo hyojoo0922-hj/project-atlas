@@ -7,7 +7,7 @@ import type { Material, RoleFamily } from "../../../packages/shared-types/src/in
 import { AlphaStore } from "./store.ts";
 import {
   ALPHA_PASS, approveTask, dashboard, executeTask, hire, login, provideMaterial,
-  registerTask, reviseTask, taskView,
+  proceedWithPartial, registerTask, reviseTask, taskView,
 } from "./app.ts";
 
 const PORT = Number(process.env.PORT ?? 4317);
@@ -59,18 +59,23 @@ function handle(url: string, req: import("node:http").IncomingMessage, res: impo
       case "/api/register": {
         const title = String(b.title ?? "").trim();
         if (!title) { send(res, 400, { error: "empty" }); return; }
-        const t = registerTask(store, title); reply({ task: taskView(t) }); return;
+        const t = registerTask(store, title); reply({ task: taskView(store, t) }); return;
       }
       case "/api/provide": {
         const t = provideMaterial(store, String(b.taskId ?? ""), String(b.infoKey ?? ""),
           (b.kind as Material["kind"]) ?? "text", String(b.value ?? ""), b.note as string | undefined);
         if (!t) { send(res, 404, { error: "no task" }); return; }
-        reply({ task: taskView(t) }); return;
+        reply({ task: taskView(store, t) }); return;
       }
       case "/api/execute": {
         const t = executeTask(store, String(b.taskId ?? ""));
         if (!t) { send(res, 404, { error: "no task" }); return; }
-        reply({ task: taskView(t) }); return;
+        reply({ task: taskView(store, t) }); return;
+      }
+      case "/api/proceed": {   // 일부 자료 미제공 — "이대로 진행하기"
+        const t = proceedWithPartial(store, String(b.taskId ?? ""));
+        if (!t) { send(res, 404, { error: "no task" }); return; }
+        reply({ task: taskView(store, t) }); return;
       }
       case "/api/hire": { hire(store, b.roleFamily as RoleFamily, b.persona as string | undefined); reply(); return; }
       case "/api/approve": {
@@ -81,7 +86,7 @@ function handle(url: string, req: import("node:http").IncomingMessage, res: impo
       case "/api/revise": {
         const t = reviseTask(store, String(b.taskId ?? ""), String(b.note ?? ""));
         if (!t) { send(res, 404, { error: "no task" }); return; }
-        reply({ task: taskView(t) }); return;
+        reply({ task: taskView(store, t) }); return;
       }
       default: send(res, 404, { error: "not found" });
     }

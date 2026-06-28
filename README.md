@@ -77,13 +77,14 @@ Customer
 
 ## 현재 상태
 
-✅ **Sprint 2A + 무료/유료 경계(#008) + Trust First 품질 구조(#009)**. 무료=진단·추천 / 유료=실행·운영. 인메모리, **51 tests green**.
-- 실행: `npm test` · `npm run demo:onboarding`(무료/유료 경계) · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
-- 경계: [free-paid-boundary](docs/business/free-paid-boundary.md) · 품질: [quality-boundary](docs/specs/quality-boundary-spec.md) · 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md)
-- 다음: **Sprint 2B 제안됨** — [대표 비서 Work Loop](docs/architecture/08-owner-assistant-work-loop.md) 설계 완료([제안서](docs/sprints/sprint-2b-proposal.md))
+🚀 **Atlas Alpha 동작** — 로그인 → 대표 비서에게 요청 → 분석·채용추천·정보요청·실행·보고·승인. **62 tests green**, AI 호출 0(규칙+mock).
+- **실행**: `npm run alpha` → http://localhost:4317 (로그인 비번 기본 `atlas`) · 데이터는 `.atlas-data/`에 영속
+- 그 외: `npm test` · `npm run demo:onboarding`(무료/유료) · `npm run build:demo`
+- 보고: [sprint-alpha-report.md](docs/sprints/sprint-alpha-report.md) · Work Loop: [architecture/08](docs/architecture/08-owner-assistant-work-loop.md)
+- 다음: Satisfaction→Health/Growth/재추천(2B-2) · 영속+실모델 결과물 생성(Sprint 3)
 
-> ⚠️ 아직 **구현하지 않는 것**: 로그인, 실제 결제 처리, 외부 AI API(Gateway mock·원가 $0), 직원 Work Loop/결과물 생성(2B), 영상/이미지 생성.
-> 🔒 **Trust First**: 결과물은 준비도/신뢰도 게이트(≥90 최종/70–89 초안/<70 정보요청)를 통과해야 한다. 부족하면 만들지 않고 요청.
+> ⚠️ Alpha 한정/미구현: 결과물은 **mock**(외부 모델 없음·원가 $0), 로컬 단일 패스 로그인, 실결제 없음.
+> 🔒 **Trust First**: 정보 부족 시 결과물을 만들지 않고 자료를 요청(Confidence ≥90 최종/70–89 초안/<70 요청).
 
 ## 저장소 구조
 

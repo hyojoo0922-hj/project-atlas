@@ -36,7 +36,7 @@ export function computeReadiness(
 // ── Output Scope 레지스트리(유형별 사양) ──
 export const OUTPUT_SCOPE: Record<OutputType, OutputScope> = {
   text: { type: "text", requiredInfo: ["topic", "tone"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "draft_ok" },
-  ad_copy: { type: "ad_copy", requiredInfo: ["brand-voice", "product-info", "audience"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "final_ge_90" },
+  ad_copy: { type: "ad_copy", requiredInfo: ["brand-voice", "product-info", "target-audience"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "final_ge_90" },
   social_post: { type: "social_post", requiredInfo: ["brand-voice", "channel"], requiredRoleFamilies: ["content"], requiredSkills: ["repurpose-to-channel"], costTier: "low", qualityBar: "draft_ok" },
   product_page: { type: "product_page", requiredInfo: ["product-info", "product-image", "policy"], requiredRoleFamilies: ["content", "design"], requiredSkills: ["brand-voice-writer"], costTier: "med", qualityBar: "final_ge_90" },
   image: { type: "image", requiredInfo: ["logo", "brand-color", "product-image", "design-reference"], requiredRoleFamilies: ["design"], requiredSkills: ["image-create"], costTier: "high", qualityBar: "final_ge_90" },

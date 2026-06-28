@@ -240,3 +240,5 @@ export interface AuditEvent {
 export * from "./onboarding-types.ts";
 // MEMO #009 품질/신뢰 도메인 타입 재노출
 export * from "./quality-types.ts";
+// MEMO #010 대표 비서 Work Loop 타입 재노출
+export * from "./work-loop-types.ts";

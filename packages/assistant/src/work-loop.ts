@@ -45,7 +45,7 @@ export function analyzeRequest(text: string): OutputType[] {
 }
 
 /** 결과물 유형 → SubTask(들). product_page처럼 다직군 유형은 직군별로 분해. */
-function toSubTasks(outputTypes: OutputType[]): SubTask[] {
+export function toSubTasks(outputTypes: OutputType[]): SubTask[] {
   const subs: SubTask[] = [];
   for (const type of outputTypes) {
     const scope = getOutputScope(type);
@@ -56,35 +56,37 @@ function toSubTasks(outputTypes: OutputType[]): SubTask[] {
   return subs;
 }
 
-/** Work Loop 실행. idgen은 호출측(스토어)이 주입(영속 id 충돌 방지). */
+/** 단일 SubTask 계획: 직원/정보 충족 판단 → executable | need_staff | need_info. */
+export function planSubTask(
+  st: SubTask, employees: CompanyEmployee[], companyInfo: Set<string>,
+): SubTaskPlan {
+  const present = new Set(employees.map((e) => e.dna.genome.roleFamily));
+  // 1) 필요 직원 확인
+  if (!present.has(st.roleFamily)) {
+    return { subTask: st, status: "need_staff", missingRoleFamilies: [st.roleFamily],
+      missingInfo: [], readinessScore: 0, confidence: "info_request" };
+  }
+  // 2) 필요 정보 확인 (추측 금지 — 부족하면 요청)
+  const missingInfo = st.requiredInfo.filter((k) => !companyInfo.has(k));
+  const score = st.requiredInfo.length === 0 ? 100
+    : Math.round(((st.requiredInfo.length - missingInfo.length) / st.requiredInfo.length) * 100);
+  const confidence = assessConfidence(score);
+  if (confidence === "info_request") {
+    return { subTask: st, status: "need_info", missingRoleFamilies: [], missingInfo, readinessScore: score, confidence };
+  }
+  // 3) 실행 가능 — 직원 선택 (해당 직군 첫 직원; Alpha v0)
+  const emp = employees.find((e) => e.dna.genome.roleFamily === st.roleFamily)!;
+  return { subTask: st, status: "executable", selectedEmployeeId: emp.id,
+    selectedEmployeePersona: emp.dna.phenotype.persona, missingRoleFamilies: [], missingInfo: [], readinessScore: score, confidence };
+}
+
+/** Work Loop 실행(one-shot 엔진). idgen은 호출측(스토어)이 주입(영속 id 충돌 방지). */
 export function runWorkLoop(input: WorkLoopInput, idgen: (p: string) => Id): WorkLoopResult {
   const analysisId = idgen("ta");
   const outputTypes = analyzeRequest(input.ownerText);
   const subTasks = toSubTasks(outputTypes);
 
-  const presentRoles = new Set(input.employees.map((e) => e.dna.genome.roleFamily));
-
-  const plans: SubTaskPlan[] = subTasks.map((st) => {
-    // 1) 필요 직원 확인
-    if (!presentRoles.has(st.roleFamily)) {
-      return { subTask: st, status: "need_staff", missingRoleFamilies: [st.roleFamily],
-        missingInfo: [], readinessScore: 0, confidence: "info_request" };
-    }
-    // 2) 필요 정보 확인 (추측 금지 — 부족하면 요청)
-    const missingInfo = st.requiredInfo.filter((k) => !input.companyInfo.has(k));
-    const score = st.requiredInfo.length === 0 ? 100
-      : Math.round(((st.requiredInfo.length - missingInfo.length) / st.requiredInfo.length) * 100);
-    const confidence = assessConfidence(score);
-    if (confidence === "info_request") {
-      return { subTask: st, status: "need_info", missingRoleFamilies: [],
-        missingInfo, readinessScore: score, confidence };
-    }
-    // 3) 실행 가능 — 직원 선택 (해당 직군 첫 직원; Alpha v0)
-    const emp = input.employees.find((e) => e.dna.genome.roleFamily === st.roleFamily)!;
-    return { subTask: st, status: "executable", selectedEmployeeId: emp.id,
-      selectedEmployeePersona: emp.dna.phenotype.persona, missingRoleFamilies: [],
-      missingInfo: [], readinessScore: score, confidence };
-  });
+  const plans: SubTaskPlan[] = subTasks.map((st) => planSubTask(st, input.employees, input.companyInfo));
 
   // 4) 배분 + mock 결과물 (실제 생성은 Sprint 3)
   const results: EmployeeResult[] = plans

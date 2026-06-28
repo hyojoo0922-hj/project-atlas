@@ -77,10 +77,11 @@ Customer
 
 ## 현재 상태
 
-🚀 **Atlas Alpha 동작** — 로그인 → 대표 비서에게 요청 → 분석·채용추천·정보요청·실행·보고·승인. **62 tests green**, AI 호출 0(규칙+mock).
+🚀 **Atlas Alpha (CEO Dashboard)** — 로그인 → 업무 카드 등록 → 자료 제공 → 직원 실행 → 결과 카드 → 승인/수정. **65 tests green**, AI 호출 0(규칙+mock).
 - **실행**: `npm run alpha` → http://localhost:4317 (로그인 비번 기본 `atlas`) · 데이터는 `.atlas-data/`에 영속
+- UX: 채팅 아님 — 대시보드(준비도·우선순위·직원·추천 채용·업무 카드·결과 카드) 중심(토스식)
 - 그 외: `npm test` · `npm run demo:onboarding`(무료/유료) · `npm run build:demo`
-- 보고: [sprint-alpha-report.md](docs/sprints/sprint-alpha-report.md) · Work Loop: [architecture/08](docs/architecture/08-owner-assistant-work-loop.md)
+- 보고: [build-fix #001](docs/sprints/alpha-build-fix-001-report.md) · [alpha](docs/sprints/sprint-alpha-report.md) · Work Loop: [architecture/08](docs/architecture/08-owner-assistant-work-loop.md)
 - 다음: Satisfaction→Health/Growth/재추천(2B-2) · 영속+실모델 결과물 생성(Sprint 3)
 
 > ⚠️ Alpha 한정/미구현: 결과물은 **mock**(외부 모델 없음·원가 $0), 로컬 단일 패스 로그인, 실결제 없음.

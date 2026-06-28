@@ -1,131 +1,157 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas Alpha · AI 공동창업자</title>
+<title>Atlas · CEO Dashboard</title>
 <style>
-  :root{color-scheme:dark}
-  *{box-sizing:border-box}
-  body{font:15px/1.6 system-ui,sans-serif;margin:0;background:#0f1115;color:#e6e8eb}
-  .wrap{max-width:720px;margin:0 auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
-  h1{font-size:18px;margin:4px 0}
-  .muted{color:#6b7280;font-size:13px}
-  .card{background:#171a21;border:1px solid #232833;border-radius:14px;padding:14px 16px;margin:10px 0}
-  input,button,textarea{font:inherit}
-  input,textarea{width:100%;background:#0f1320;border:1px solid #2a3140;color:#e6e8eb;border-radius:10px;padding:10px}
-  .btn{background:#5bd6a0;color:#0f1115;font-weight:700;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-  .btn2{background:#1f2530;color:#cfd6df;border:1px solid #2c3340;border-radius:10px;padding:8px 12px;cursor:pointer;margin:4px 6px 0 0}
-  .row{display:flex;gap:8px}
-  .msg{margin:8px 0}.me{text-align:right}.me .b{background:#243042}
-  .b{display:inline-block;background:#171a21;border:1px solid #232833;border-radius:12px;padding:10px 14px;max-width:90%}
-  .tag{display:inline-block;background:#1f2530;border-radius:6px;padding:1px 8px;margin:2px;font-size:12px}
-  .ok{color:#5bd6a0}.warn{color:#e3cf9f}.feed{margin-top:6px}
-  #chat{flex:1;overflow:auto}
-  .hd{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #232833;padding-bottom:8px}
-  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
-  .three .c{background:#13182088;border:1px solid #232833;border-radius:10px;padding:8px}.lbl{font-size:11px;color:#6b7280}
+  :root{color-scheme:dark}*{box-sizing:border-box}
+  body{font:15px/1.55 system-ui,-apple-system,sans-serif;margin:0;background:#0d0f14;color:#eef1f5}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:22px;margin:2px 0}h2{font-size:13px;color:#8b94a3;margin:22px 2px 8px;letter-spacing:.04em}
+  .muted{color:#7b8494;font-size:13px}
+  .card{background:#161922;border:1px solid #232a36;border-radius:16px;padding:16px;margin:10px 0}
+  .row{display:flex;gap:8px;align-items:center}.between{justify-content:space-between}
+  input,select,button{font:inherit}
+  input,select{background:#0e1320;border:1px solid #2a3242;color:#eef1f5;border-radius:10px;padding:9px 10px;width:100%}
+  .btn{background:#4ade9b;color:#08120c;font-weight:800;border:none;border-radius:11px;padding:10px 14px;cursor:pointer;white-space:nowrap}
+  .btn2{background:#1c2330;color:#dfe5ee;border:1px solid #2c3442;border-radius:10px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+  .btn.sm,.btn2.sm{padding:6px 10px;font-size:13px}
+  .pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  .p-ready{background:#13351f;color:#5fe39e}.p-wait{background:#33270f;color:#e8c772}.p-hire{background:#331826;color:#f0a0c0}
+  .p-done{background:#13294a;color:#79b8ff}.p-ok{background:#1d3326;color:#7ee0a6}
+  .tag{display:inline-block;background:#1c2330;border-radius:8px;padding:2px 9px;margin:3px 4px 0 0;font-size:12px;color:#cdd5e1}
+  .bar{height:8px;background:#1c2330;border-radius:999px;overflow:hidden;margin-top:6px}
+  .bar>i{display:block;height:100%;background:#4ade9b}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .small{font-size:13px}.mt{margin-top:8px}.b{font-weight:700}
+  .result{white-space:pre-wrap;background:#0e1320;border:1px solid #222a37;border-radius:10px;padding:10px;margin-top:6px;font-size:13px}
+  .hide{display:none}
+  a{color:#79b8ff}
 </style></head>
 <body><div class="wrap">
 
 <div id="login">
-  <h1>🏢 Atlas Alpha</h1>
-  <div class="muted">고객의 AI 공동창업자 — 대표는 비서에게 말만 하면 됩니다.</div>
+  <h1>🏢 Atlas</h1>
+  <div class="muted">대표는 대화하러 오지 않습니다. 일을 끝내러 옵니다.</div>
   <div class="card">
     <label class="muted">대표 이름</label>
-    <input id="name" placeholder="효주 대표" value="효주 대표">
-    <label class="muted" style="margin-top:8px;display:block">비밀번호</label>
+    <input id="name" value="효주 대표">
+    <label class="muted mt" style="display:block">비밀번호</label>
     <input id="pass" type="password" placeholder="atlas">
-    <div style="margin-top:10px"><button class="btn" onclick="doLogin()">로그인</button></div>
-    <div id="loginerr" class="warn" style="margin-top:8px"></div>
+    <div class="mt"><button class="btn" style="width:100%" onclick="doLogin()">시작하기</button></div>
+    <div id="loginerr" style="color:#f0a0c0;margin-top:8px"></div>
   </div>
 </div>
 
-<div id="app" style="display:none;flex:1;flex-direction:column">
-  <div class="hd">
-    <div><b id="company"></b> <span class="muted" id="who"></span></div>
-    <div class="muted" id="staff"></div>
-  </div>
-  <div id="chat"></div>
-  <div class="card">
-    <div class="row">
-      <input id="say" placeholder="예) 오늘 신메뉴 홍보하고 싶어" onkeydown="if(event.key==='Enter')doSay()">
-      <button class="btn" onclick="doSay()">요청</button>
-    </div>
-    <div class="muted" style="margin-top:6px">대표는 직원과 직접 대화하지 않습니다. 비서에게 요청하세요.</div>
-  </div>
-</div>
+<div id="app" class="hide"></div>
 
 </div>
 <script>
-let token = "";
-const $ = (id) => document.getElementById(id);
-const api = async (path, body) => (await fetch(path, { method:"POST", headers:{ "content-type":"application/json","x-atlas-token":token }, body: JSON.stringify(body||{}) })).json();
+let token="", DB=null;
+const $=(id)=>document.getElementById(id);
+const esc=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const api=async(p,b)=>(await fetch(p,{method:"POST",headers:{"content-type":"application/json","x-atlas-token":token},body:JSON.stringify(b||{})})).json();
 
 async function doLogin(){
-  const r = await api("/api/login", { ownerName: $("name").value, pass: $("pass").value });
-  if(!r.ok){ $("loginerr").textContent = r.reason || "로그인 실패"; return; }
-  token = r.token; $("login").style.display="none"; $("app").style.display="flex";
-  renderState(r.state);
-  bubble("assistant", `안녕하세요 ${r.ownerName}님, 대표 비서입니다. 오늘 무엇을 도와드릴까요?`);
+  const r=await api("/api/login",{ownerName:$("name").value,pass:$("pass").value});
+  if(!r.ok){$("loginerr").textContent=r.reason||"로그인 실패";return;}
+  token=r.token; $("login").classList.add("hide"); $("app").classList.remove("hide");
+  DB=r.dashboard; render();
 }
-function renderState(s){
-  $("company").textContent = s.company.name;
-  $("who").textContent = " · " + s.ownerName;
-  $("staff").textContent = "직원 " + s.employees.map(e=>e.persona).join(", ");
+function statusPill(s){
+  const m={ready:["p-ready","실행 가능"],awaiting_materials:["p-wait","자료 대기"],needs_hire:["p-hire","직원 필요"],delivered:["p-done","결과 완료"],approved:["p-ok","승인됨"],revise:["p-wait","수정 요청"]};
+  const [c,l]=m[s]||["p-wait",s]; return `<span class="pill ${c}">${l}</span>`;
 }
-function bubble(who, html){
-  const d = document.createElement("div");
-  d.className = "msg " + (who==="me"?"me":"");
-  d.innerHTML = `<div class="b">${html}</div>`;
-  $("chat").appendChild(d); $("chat").scrollTop = $("chat").scrollHeight;
-  return d;
-}
-function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 
-async function doSay(){
-  const text = $("say").value.trim(); if(!text) return;
-  $("say").value=""; bubble("me", esc(text));
-  const r = await api("/api/request", { text });
-  renderReport(r.view, r.state);
+function render(){
+  const d=DB; const hour=new Date().getHours();
+  const greet=hour<11?"좋은 아침입니다":hour<18?"안녕하세요":"좋은 저녁입니다";
+  let h=`<div class="row between"><h1>${greet}, ${esc(d.ownerName)}님</h1></div>
+    <div class="card"><div class="row between"><div><div class="b">${esc(d.company.name)}</div><div class="muted">회사 운영 준비도</div></div>
+      <div class="b" style="font-size:22px">${d.readiness}%</div></div><div class="bar"><i style="width:${d.readiness}%"></i></div></div>`;
+
+  // 오늘의 우선순위
+  h+=`<h2>오늘의 우선순위</h2><div class="card">`;
+  h+=d.priorities.map(p=>`<div class="row between mt"><span>· ${esc(p)}</span><button class="btn2 sm" onclick="quick('${esc(p)}')">시작</button></div>`).join("")||`<span class="muted">없음</span>`;
+  h+=`</div>`;
+
+  // 새 업무 시작
+  h+=`<h2>새 업무 시작</h2><div class="card"><div class="row">
+      <input id="newtask" placeholder="예) 오늘 신메뉴 홍보 콘텐츠 필요" onkeydown="if(event.key==='Enter')register()">
+      <button class="btn" onclick="register()">등록</button></div>
+      <div class="muted mt">대화가 아니라 업무 등록입니다. 한 줄이면 됩니다.</div></div>`;
+
+  // 진행 중 업무
+  const open=d.tasks.filter(t=>t.status!=="approved");
+  h+=`<h2>진행 중 업무</h2>`;
+  h+= open.length? open.map(taskCard).join("") : `<div class="card muted">진행 중 업무가 없습니다. 위에서 새 업무를 시작하세요.</div>`;
+
+  // 현재 직원 / 채용
+  h+=`<h2>현재 직원</h2><div class="card"><div class="row mt"><span class="tag">대표 비서 · 출근</span>`;
+  h+=d.employees.map(e=>`<span class="tag">${esc(e.title)} · ${e.hired?"출근":"미채용"}</span>`).join("");
+  h+=`</div></div>`;
+
+  // 추천 채용
+  if(d.recommendedHires.length){
+    h+=`<h2>추천 채용</h2>`;
+    h+=d.recommendedHires.map(r=>`<div class="card"><div class="row between"><div><div class="b">${esc(r.title)}</div>
+        <div class="muted small">${esc(r.reason)}</div></div><button class="btn sm" onclick="hire('${r.roleFamily}')">채용하기</button></div></div>`).join("");
+  }
+
+  // 직원 채용 목록
+  h+=`<h2>직원 채용 목록</h2>`;
+  h+=d.employees.map(e=>`<div class="card"><div class="row between"><div><div class="b">${esc(e.title)} ${e.hired?'<span class="pill p-ok">채용됨</span>':''}</div>
+      <div class="muted small">${esc(e.canDo)}</div></div>${e.hired?"":`<button class="btn2 sm" onclick="hire('${e.roleFamily}')">채용하기</button>`}</div></div>`).join("");
+
+  $("app").innerHTML=h;
 }
-function renderReport(v, state){
-  renderState(state);
-  let html = `<b>대표 비서</b><div style="margin-top:6px">${esc(v.summary)}</div>`;
-  if(v.deliverables.length){
-    html += `<div style="margin-top:8px">📦 결과물:</div>`;
-    v.deliverables.forEach(d=> html += `<span class="tag">${esc(d.type)} · ${d.state==="final"?"최종본":"초안"} · ${esc(d.by)}</span>`);
-  }
-  const d = bubble("assistant", html);
-  // 정보 요청 (추측 안 함)
-  if(v.infoNeeded.length){
-    const box = document.createElement("div"); box.className="card";
-    box.innerHTML = `<div class="warn">정확한 결과를 위해 아래 자료가 필요합니다 (추측하지 않습니다):</div>`;
-    v.infoNeeded.forEach(i=>{ box.innerHTML += `<label style="display:block;margin-top:4px"><input type="checkbox" value="${i.key}" checked> ${esc(i.label)}</label>`; });
-    const b = document.createElement("button"); b.className="btn"; b.style.marginTop="8px"; b.textContent="자료 제공하기";
-    b.onclick = async ()=>{ const keys=[...box.querySelectorAll("input:checked")].map(x=>x.value); await api("/api/provide",{keys}); box.remove(); bubble("me","자료를 제공했어요"); const r=await api("/api/request",{text:lastText}); renderReport(r.view,r.state); };
-    box.appendChild(b); d.appendChild(box);
-  }
-  // 채용 추천 (업셀)
-  if(v.hireOptions.length){
-    const box = document.createElement("div"); box.className="card";
-    box.innerHTML = `<div class="warn">이 업무에는 아래 직원이 더 필요합니다:</div>`;
-    v.hireOptions.forEach(h=>{
-      const b=document.createElement("button"); b.className="btn2"; b.textContent=`${h.title} 채용하기`;
-      b.onclick = async ()=>{ await api("/api/hire",{roleFamily:h.roleFamily}); bubble("me",`${h.title}를 채용했어요`); if(h.asks.length) bubble("assistant",`채용 완료! ${h.title}가 일하려면 필요해요: ${h.asks.map(esc).join(", ")}`); const r=await api("/api/request",{text:lastText}); renderReport(r.view,r.state); };
-      box.appendChild(b);
+
+function taskCard(t){
+  let inner=`<div class="row between"><div class="b">${esc(t.title)}</div>${statusPill(t.status)}</div>
+    <div class="muted small mt">담당: ${t.assignees.map(esc).join(", ")||"-"}</div>`;
+
+  // 필요 자료 (자료 제공 입력)
+  if(t.neededMaterials.length){
+    inner+=`<div class="mt b small">필요 자료 (추측하지 않습니다)</div>`;
+    t.neededMaterials.forEach(m=>{
+      inner+=`<div class="row mt" style="gap:6px">
+        <span class="tag" style="min-width:84px">${esc(m.label)}</span>
+        <input id="mat_${t.id}_${m.key}" placeholder="텍스트 또는 URL">
+        <input type="file" id="file_${t.id}_${m.key}" style="max-width:120px">
+        <button class="btn sm" onclick="provide('${t.id}','${m.key}')">제공</button></div>`;
     });
-    d.appendChild(box);
   }
-  // 승인 / 수정 (결과물 있을 때)
-  if(v.feedbackRequest){
-    const box=document.createElement("div"); box.className="card feed";
-    box.innerHTML = `<div class="muted">결과가 마음에 드시나요?</div>`;
-    const ap=document.createElement("button"); ap.className="btn"; ap.textContent="승인";
-    ap.onclick=async()=>{ await api("/api/approve",{taskId:v.taskId,overall:5}); box.remove(); bubble("assistant","승인 감사합니다. 다음 업무도 맡겨주세요!"); };
-    const rv=document.createElement("button"); rv.className="btn2"; rv.textContent="수정 요청";
-    rv.onclick=async()=>{ const note=prompt("어떻게 수정할까요?"); if(!note)return; const r=await api("/api/revise",{taskId:v.taskId,note}); bubble("me","수정 요청: "+esc(note)); renderReport(r.view,r.state); };
-    box.appendChild(ap); box.appendChild(rv); d.appendChild(box);
+  // 제공된 자료
+  if(t.provided.length){
+    inner+=`<div class="mt small muted">제공됨: ${t.provided.map(p=>esc(p.label)+(p.kind!=="text"?`(${p.kind})`:"")).join(", ")}</div>`;
   }
+  // 추천 채용 (업무 기준)
+  if(t.recommendedHires.length){
+    inner+=`<div class="mt small">이 업무엔 더 필요해요: `+t.recommendedHires.map(r=>`<button class="btn2 sm" onclick="hire('${r.roleFamily}')">${esc(r.title)} 채용</button>`).join(" ")+`</div>`;
+  }
+  // 실행 버튼 (실행 가능 / 수정 요청 후 재실행)
+  if(t.status==="ready"||t.status==="revise") inner+=`<div class="mt"><button class="btn" onclick="execute('${t.id}')">${t.status==="revise"?"수정해서 다시 실행":"직원에게 실행시키기"}</button></div>`;
+  // 결과물 카드
+  if(t.results.length){
+    inner+=`<div class="mt b small">결과물</div>`;
+    t.results.forEach(r=>{
+      inner+=`<div class="result"><div class="b small">${esc(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · ${esc(r.by)}</div>${esc(r.content)}</div>`;
+    });
+    if(t.status!=="approved") inner+=`<div class="row mt"><button class="btn" onclick="approve('${t.id}')">승인하기</button><button class="btn2" onclick="revise('${t.id}')">수정 요청</button></div>`;
+  }
+  return `<div class="card">${inner}</div>`;
 }
-let lastText="";
-const _say=doSay; doSay=function(){ lastText=$("say").value.trim()||lastText; return _say(); };
-</script>
-</body></html>
+
+async function register(){const v=($("newtask")||{}).value?.trim();if(!v)return;const r=await api("/api/register",{title:v});DB=r.dashboard;render();}
+async function quick(title){const r=await api("/api/register",{title});DB=r.dashboard;render();}
+async function provide(taskId,key){
+  const fileEl=$(`file_${taskId}_${key}`), txt=$(`mat_${taskId}_${key}`).value.trim();
+  let kind="text",value=txt;
+  if(fileEl&&fileEl.files&&fileEl.files[0]){const f=fileEl.files[0];value=f.name;kind=f.type.startsWith("image/")?"image":"file";}
+  else if(/^https?:\/\//.test(txt))kind="url";
+  if(!value){alert("자료를 입력하거나 파일을 선택하세요");return;}
+  const r=await api("/api/provide",{taskId,infoKey:key,kind,value});DB=r.dashboard;render();
+}
+async function execute(taskId){const r=await api("/api/execute",{taskId});DB=r.dashboard;render();}
+async function hire(roleFamily){const r=await api("/api/hire",{roleFamily});DB=r.dashboard;render();}
+async function approve(taskId){const r=await api("/api/approve",{taskId,overall:5});DB=r.dashboard;render();}
+async function revise(taskId){const note=prompt("어떻게 수정할까요?");if(!note)return;const r=await api("/api/revise",{taskId,note});DB=r.dashboard;render();}
+</script></body></html>

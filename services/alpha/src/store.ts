@@ -3,14 +3,42 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import type {
-  Company, CompanyEmployee, Department, Id, OwnerReport, RoleFamily,
+  Company, CompanyEmployee, Department, Id, OutputType, RoleFamily,
 } from "../../../packages/shared-types/src/index.ts";
+
+/** 업무 상태 전이: 자료 대기 → 실행 가능 → (실행) → 결과 완료 → 승인/수정. 직원 부족 시 needs_hire. */
+export type TaskStatus =
+  | "needs_hire" | "awaiting_materials" | "ready" | "delivered" | "approved" | "revise";
+
+/** 대표가 제공한 자료 (Company/Brand Memory에 연결) */
+export interface Material {
+  id: Id;
+  taskId: Id;
+  infoKey: string;
+  kind: "text" | "url" | "file" | "image";
+  value: string;          // 텍스트/URL/파일명
+  note?: string;
+  byEmployeeRole?: RoleFamily;   // 어떤 직원이 요청했는가
+}
+
+/** mock 결과물 (실제 생성은 Sprint 3) */
+export interface TaskResult {
+  outputType: OutputType;
+  by: string;             // 담당 직원 persona
+  state: "final" | "draft";
+  content: string;        // mock/placeholder 텍스트
+}
 
 export interface AlphaTask {
   id: Id;
-  ownerText: string;
-  report: OwnerReport;
-  status: "open" | "approved" | "revise";
+  title: string;          // 대표가 입력한 업무 한 줄
+  outputTypes: OutputType[];
+  requiredRoles: RoleFamily[];
+  status: TaskStatus;
+  missingInfo: string[];        // 현재 부족 자료(보유 직군 기준)
+  missingRoles: RoleFamily[];   // 추천 채용 직군
+  materials: Material[];
+  results: TaskResult[];
   reviseNote?: string;
   feedback?: { overall: number; comment?: string };
 }

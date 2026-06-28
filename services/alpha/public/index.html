@@ -51,10 +51,14 @@ const esc=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const api=async(p,b)=>(await fetch(p,{method:"POST",headers:{"content-type":"application/json","x-atlas-token":token},body:JSON.stringify(b||{})})).json();
 
 async function doLogin(){
-  const r=await api("/api/login",{ownerName:$("name").value,pass:$("pass").value});
-  if(!r.ok){$("loginerr").textContent=r.reason||"로그인 실패";return;}
-  token=r.token; $("login").classList.add("hide"); $("app").classList.remove("hide");
-  DB=r.dashboard; render();
+  let r;
+  try{ r=await api("/api/login",{ownerName:$("name").value,pass:$("pass").value}); }
+  catch(e){ $("loginerr").textContent="서버에 연결할 수 없습니다. 다시 시도해 주세요."; return; }
+  if(!r||!r.ok){$("loginerr").textContent=(r&&r.reason)||"로그인 실패";return;}
+  if(!r.dashboard){$("loginerr").textContent="대시보드를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";return;}
+  token=r.token; DB=r.dashboard;
+  $("login").classList.add("hide"); $("app").classList.remove("hide");
+  render();
 }
 function statusPill(s){
   const m={ready:["p-ready","실행 가능"],awaiting_materials:["p-wait","자료 대기"],needs_hire:["p-hire","직원 필요"],delivered:["p-done","결과 완료"],approved:["p-ok","승인됨"],revise:["p-wait","수정 요청"]};
@@ -62,6 +66,15 @@ function statusPill(s){
 }
 
 function render(){
+  try{ renderInner(); }
+  catch(e){
+    console.error("render error:", e);
+    $("app").innerHTML=`<div class="card"><div class="b">화면을 그리는 중 문제가 발생했습니다.</div>
+      <div class="muted mt">${esc(e&&e.message||e)}</div>
+      <div class="mt"><button class="btn" onclick="location.reload()">새로고침</button></div></div>`;
+  }
+}
+function renderInner(){
   const d=DB; const hour=new Date().getHours();
   const greet=hour<11?"좋은 아침입니다":hour<18?"안녕하세요":"좋은 저녁입니다";
   let h=`<div class="row between"><h1>${greet}, ${esc(d.ownerName)}님</h1></div>

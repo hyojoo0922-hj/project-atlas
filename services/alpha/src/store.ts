@@ -44,6 +44,7 @@ export interface AlphaTask {
 }
 
 export interface AlphaData {
+  version: number;
   seq: number;
   ownerName: string;
   company: Company;
@@ -53,7 +54,28 @@ export interface AlphaData {
   tasks: AlphaTask[];
 }
 
+/** 데이터 스키마 버전. 구버전(예: 채팅 시절 tasks)과 호환되지 않으면 새로 부트스트랩. */
+export const DATA_VERSION = 2;
 const DATA_PATH = process.env.ATLAS_DATA ?? `${process.cwd()}/.atlas-data/alpha.json`;
+
+const isCurrentTask = (t: unknown): boolean =>
+  !!t && typeof (t as AlphaTask).title === "string" && Array.isArray((t as AlphaTask).requiredRoles);
+
+/** 저장된 데이터를 현재 스키마로 안전 로드. 비호환이면 백업 후 새로 시작(검은 화면 방지). */
+function loadOrBootstrap(path: string): AlphaData {
+  if (!existsSync(path)) return bootstrap();
+  let raw: Partial<AlphaData> | null = null;
+  try { raw = JSON.parse(readFileSync(path, "utf8")); } catch { raw = null; }
+  const tasksOk = !raw?.tasks || (Array.isArray(raw.tasks) && raw.tasks.every(isCurrentTask));
+  const ok = raw && raw.company && Array.isArray(raw.employees) && Array.isArray(raw.companyInfo) && tasksOk
+    && (raw.version === DATA_VERSION || raw.version === undefined);
+  if (!ok) {
+    // 구버전/손상 데이터 → 백업 후 새로 부트스트랩
+    try { writeFileSync(`${path}.bak`, readFileSync(path)); } catch { /* noop */ }
+    return bootstrap();
+  }
+  return { ...bootstrap(), ...(raw as AlphaData), version: DATA_VERSION };
+}
 
 export class AlphaStore {
   data: AlphaData;
@@ -61,7 +83,7 @@ export class AlphaStore {
 
   constructor(path = DATA_PATH) {
     this.path = path;
-    this.data = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : bootstrap();
+    this.data = loadOrBootstrap(path);
     this.save();
   }
 
@@ -104,5 +126,5 @@ function bootstrap(): AlphaData {
     mkEmp(depOps, "operations", "운영 매니저", "responder"),
     mkEmp(depMkt, "content", "콘텐츠 라이터", "creator"),
   ];
-  return { seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [] };
+  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [] };
 }

@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { Material, RoleFamily } from "../../../packages/shared-types/src/index.ts";
 import { AlphaStore } from "./store.ts";
 import {
-  ALPHA_PASS, approveTask, dashboard, executeTask, hire, login, provideMaterial,
+  ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login, provideMaterial,
   proceedWithPartial, registerTask, reviseTask, taskView,
 } from "./app.ts";
 
@@ -78,6 +78,10 @@ function handle(url: string, req: import("node:http").IncomingMessage, res: impo
         reply({ task: taskView(store, t) }); return;
       }
       case "/api/hire": { hire(store, b.roleFamily as RoleFamily, b.persona as string | undefined); reply(); return; }
+      case "/api/hide": {   // 카드 숨기기(삭제 아님)
+        const ok = hideTask(store, String(b.taskId ?? ""));
+        send(res, ok ? 200 : 404, { ok, dashboard: dashboard(store) }); return;
+      }
       case "/api/approve": {
         const ok = approveTask(store, String(b.taskId ?? ""),
           b.overall ? { overall: Number(b.overall), comment: b.comment as string } : undefined);

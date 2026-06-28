@@ -149,6 +149,15 @@ export function reviseTask(store: AlphaStore, taskId: Id, note: string): AlphaTa
   return t;
 }
 
+// ── 숨김 처리 (삭제 아님 — 데이터는 JSON에 보존) ──
+export function hideTask(store: AlphaStore, taskId: Id, now = new Date().toISOString()): boolean {
+  const t = store.data.tasks.find((x) => x.id === taskId);
+  if (!t) return false;
+  t.hidden = true; t.archivedAt = now;
+  store.save();
+  return true;
+}
+
 // ── 채용 ──
 export function hire(store: AlphaStore, roleFamily: RoleFamily, persona?: string): Id {
   const id = store.nextId("emp");
@@ -169,7 +178,8 @@ export function hire(store: AlphaStore, roleFamily: RoleFamily, persona?: string
 export function dashboard(store: AlphaStore) {
   const d = store.data;
   const presentRoles = new Set(d.employees.map((e) => e.dna.genome.roleFamily));
-  const openTasks = d.tasks.filter((t) => t.status !== "approved");
+  const visible = d.tasks.filter((t) => !t.hidden);          // 숨김 제외
+  const openTasks = visible.filter((t) => t.status !== "approved");
 
   // 추천 채용: open 업무의 부족 직군 + (기본) Designer
   const recoRoles = uniq(openTasks.flatMap((t) => t.missingRoles));
@@ -191,8 +201,22 @@ export function dashboard(store: AlphaStore) {
       ...c, hired: presentRoles.has(c.roleFamily),
     })),
     recommendedHires,
-    tasks: d.tasks.slice(-12).reverse().map((t) => taskView(store, t)),
+    tasks: openTasks.slice(-12).reverse().map((t) => taskView(store, t)),
+    // 결과물 탭: 전달/승인 완료 결과물(숨김 제외)
+    deliverables: resultsTab(visible),
   };
+}
+
+/** 결과물 탭 데이터 — 결과가 있는(전달/승인) 업무의 결과 카드들. */
+export function resultsTab(tasks: AlphaTask[]) {
+  return tasks
+    .filter((t) => !t.hidden && t.results.length > 0 && (t.status === "delivered" || t.status === "approved"))
+    .reverse()
+    .flatMap((t) => t.results.map((r) => ({
+      taskId: t.id, title: t.title, by: r.by, outputType: r.outputType,
+      state: r.state, approved: t.status === "approved", content: r.content,
+      canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
+    })));
 }
 
 export function taskView(store: AlphaStore, t: AlphaTask) {

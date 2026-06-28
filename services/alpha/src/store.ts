@@ -45,6 +45,8 @@ export interface AlphaTask {
   feedback?: { overall: number; comment?: string };
   proceedAnyway?: boolean;       // 대표가 "이대로 진행" 선택(일부 자료 미제공 허용)
   partialMaterials?: boolean;    // 결과가 일부 자료 부족 상태로 생성됨
+  hidden?: boolean;              // 숨김 처리(삭제 아님 — Satisfaction/감사 활용 위해 보존)
+  archivedAt?: string;          // 숨김 처리 시각(ISO)
 }
 
 export interface AlphaData {

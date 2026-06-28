@@ -3,9 +3,17 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
-  ALPHA_PASS, approveTask, dashboard, executeTask, hire, login, proceedWithPartial,
+  ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login, proceedWithPartial,
   provideMaterial, registerTask, reviseTask, taskView,
 } from "../src/app.ts";
+
+const deliver = (s: AlphaStore, title = "신메뉴 소개 글 써줘") => {
+  const t = registerTask(s, title);
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  executeTask(s, t.id);
+  return t.id;
+};
 
 const tmp = () => {
   const p = `${process.env.TMPDIR ?? "/tmp"}/atlas-fix-${Math.round(performance.now() * 1000)}.json`;
@@ -134,6 +142,38 @@ test("파일/이미지 자료는 메타데이터(mock)로 저장된다", () => {
   const m = s.data.tasks.find((x) => x.id === t.id)!.materials[0]!;
   assert.equal(m.kind, "image");
   assert.equal(m.value, "logo.png");
+});
+
+test("결과물 탭: 전달/승인된 결과물만 포함", () => {
+  const s = tmp();
+  const id = deliver(s);
+  let d = dashboard(s);
+  assert.ok(d.deliverables.some((r) => r.taskId === id));   // 전달 완료 포함
+  approveTask(s, id, { overall: 5 });
+  d = dashboard(s);
+  const card = d.deliverables.find((r) => r.taskId === id)!;
+  assert.equal(card.approved, true);                        // 승인 상태 표시
+  assert.ok(!d.tasks.some((t) => t.id === id));             // 승인 후 진행중 목록에서 제외
+});
+
+test("숨김: 기본 화면(진행중)과 결과물 탭 모두에서 제외", () => {
+  const s = tmp();
+  const id = deliver(s);
+  assert.equal(hideTask(s, id, "2026-06-28T00:00:00.000Z"), true);
+  const d = dashboard(s);
+  assert.ok(!d.tasks.some((t) => t.id === id));             // 진행중 제외
+  assert.ok(!d.deliverables.some((r) => r.taskId === id));  // 결과물 탭 제외
+});
+
+test("숨김: 데이터는 삭제되지 않고 보존된다(hidden+archivedAt)", () => {
+  const s = tmp();
+  const id = deliver(s);
+  hideTask(s, id, "2026-06-28T00:00:00.000Z");
+  const raw = s.data.tasks.find((t) => t.id === id)!;       // 원본 데이터 존재
+  assert.ok(raw);
+  assert.equal(raw.hidden, true);
+  assert.equal(raw.archivedAt, "2026-06-28T00:00:00.000Z");
+  assert.ok(raw.results.length > 0);                        // 결과물 내용도 보존
 });
 
 test("persistence: 재시작 후 업무·자료 유지", () => {

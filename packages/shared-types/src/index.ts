@@ -48,8 +48,8 @@ export interface BrandMemory {
 }
 
 // ───────────────────────── Employee (중심 객체) ─────────────────────────
-// Sprint 2A: operations·marketing 추가(개정 #002~#004 조직 직군). 하위호환 유지.
-export type RoleFamily = "content" | "support" | "research" | "operations" | "marketing";
+// Sprint 2A: operations·marketing 추가. MEMO #009: design 추가(Designer Employee). 하위호환 유지.
+export type RoleFamily = "content" | "support" | "research" | "operations" | "marketing" | "design";
 
 /** DNA 4레이어: genome(불변) / phenotype(발현) / acquired(획득) / lineage(계보) */
 export interface EmployeeGenome {       // 불변 — 생성 후 변경 금지
@@ -238,3 +238,5 @@ export interface AuditEvent {
 
 // Sprint 2A 온보딩/조직 도메인 타입 재노출
 export * from "./onboarding-types.ts";
+// MEMO #009 품질/신뢰 도메인 타입 재노출
+export * from "./quality-types.ts";

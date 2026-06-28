@@ -83,6 +83,20 @@ Customer Workspace (= 내 회사)
 2. 업무를 자연어로 위임.
 3. 결과 확인. (내부의 Skill·Matching·라이프사이클·토큰은 보이지 않음)
 
+### 품질·신뢰 UX (Trust First — MEMO #009, Sprint 2B 적용)
+업무 위임 시 직원은 **무조건 결과물을 만들지 않는다.** 준비도/신뢰도에 따라 화면이 달라진다:
+```
+Delegate Work → (직원이 판단)
+  ├─ 정보 충분(≥90)  → 결과물(최종본) + 만족도 피드백 요청
+  ├─ 부분 충족(70–89) → "초안입니다" 라벨 + 보완 자료 안내
+  ├─ 부족(<70)        → 결과물 대신 "필요한 자료 요청"(직원이 묻는 카드)
+  └─ 범위 밖          → "이 업무엔 ○○ 직원이 필요합니다" (채용 추천/업셀)
+```
+- **직원 온보딩**: 채용 직후 그 직원이 필요한 자료만 묻는다(긴 가입 설문 X). 직군별 질문 → [progressive-company-learning](../specs/progressive-company-learning-spec.md).
+- **만족도**: 결과물 후 전체 만족도·브랜드다움·유용성·재사용 의향·한 줄 + (7일 후) 성과 피드백.
+- 고객엔 신뢰도 점수를 복잡하게 보이지 않되, 정직하게(초안/자료 필요) 안내. 점수·누락은 Operator HQ.
+> 상세: [quality-boundary](../specs/quality-boundary-spec.md) · [employee-readiness](../specs/employee-readiness-spec.md) · [output-scope](../specs/output-scope-spec.md) · [satisfaction-memory](../specs/satisfaction-memory-spec.md)
+
 ---
 
 ## Codex 인계 지점

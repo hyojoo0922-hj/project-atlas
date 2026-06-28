@@ -13,6 +13,14 @@
 - [Employee Recommendation / Upsell](employee-recommendation-upsell-spec.md) — 부족 직원 채용 추천(수익 모델)
 - 우산: [Onboarding Architecture](../architecture/07-onboarding-architecture.md) · 경계: [free-paid-boundary](../business/free-paid-boundary.md)
 
+## 품질 / 신뢰 (BUSINESS & QUALITY MEMO #009 — Trust First)
+신뢰할 수 있는 결과만 제공. 부족하면 만들지 않고 요청한다.
+- [Quality Boundary](quality-boundary-spec.md) — 결과물 강제 생성 금지, 정보 요청, Trust First
+- [Employee Readiness & Confidence](employee-readiness-spec.md) — 직군별 준비도 + 임계(90/70)
+- [Output Scope](output-scope-spec.md) — 결과물 유형별 필수정보·원가·직원·Skill·품질기준
+- [Progressive Company Learning](progressive-company-learning-spec.md) — 단계적 정보 수집 + 직군별 온보딩
+- [Satisfaction Memory & Outcome Feedback](satisfaction-memory-spec.md) — 만족도·성과 피드백(학습 연료)
+
 ## 조직 객체 (Company 중심 — 개정 #002·#003)
 계층: **Company → CEO → Department → Employee → Skill**
 - [Company DNA Specification](company-dna-spec.md) — 최상위 객체, DNA·문화·목표·KPI·단계·건강

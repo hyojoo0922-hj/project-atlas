@@ -77,12 +77,13 @@ Customer
 
 ## 현재 상태
 
-✅ **Sprint 2A 완료 + 무료/유료 경계(MEMO #008)** — AI 공동창업자 온보딩. **무료=진단·추천(설계안 Preview)**, **유료=회사 설립·대표 비서·운영**. 인메모리, **46 tests green**.
+✅ **Sprint 2A + 무료/유료 경계(#008) + Trust First 품질 구조(#009)**. 무료=진단·추천 / 유료=실행·운영. 인메모리, **51 tests green**.
 - 실행: `npm test` · `npm run demo:onboarding`(무료/유료 경계) · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
-- 경계: [free-paid-boundary](docs/business/free-paid-boundary.md) · 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md) · 로드맵: [roadmap.md](docs/sprints/roadmap.md)
-- 다음: **Sprint 2B**(운영 루프·결과물·Health·Growth·재추천)
+- 경계: [free-paid-boundary](docs/business/free-paid-boundary.md) · 품질: [quality-boundary](docs/specs/quality-boundary-spec.md) · 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md)
+- 다음: **Sprint 2B**(대표 비서 Work Loop·결과물 — Quality 게이트 적용·Satisfaction·Health·Growth·재추천)
 
-> ⚠️ 아직 **구현하지 않는 것**: 로그인, 실제 결제 처리, 외부 AI API(Gateway mock·원가 $0), 직원 Work Loop/결과물(2B), 영상/이미지 생성.
+> ⚠️ 아직 **구현하지 않는 것**: 로그인, 실제 결제 처리, 외부 AI API(Gateway mock·원가 $0), 직원 Work Loop/결과물 생성(2B), 영상/이미지 생성.
+> 🔒 **Trust First**: 결과물은 준비도/신뢰도 게이트(≥90 최종/70–89 초안/<70 정보요청)를 통과해야 한다. 부족하면 만들지 않고 요청.
 
 ## 저장소 구조
 

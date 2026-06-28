@@ -27,3 +27,8 @@
 |---|---|
 | `staffing/` | 부족 직원 채용 추천(업셀링) 순수 분석 |
 | (company-creation) | + `buildCompanyProposal`(무료) / `createCompanyFromDraft` 결제 게이트 |
+
+## BUSINESS & QUALITY MEMO #009 (Trust First)
+| 패키지 | 역할 |
+|---|---|
+| `quality/` | 신뢰도·준비도·Output Scope·직원 온보딩 질문(순수 게이트) |

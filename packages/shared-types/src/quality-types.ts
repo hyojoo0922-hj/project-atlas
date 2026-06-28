@@ -31,6 +31,8 @@ export interface OutputScope {
   requiredSkills: string[];
   costTier: CostTier;
   qualityBar: "draft_ok" | "final_ge_90";
+  /** 최소 정보(0)로도 mock 초안이 가능한 유형인가 (텍스트형=true, 이미지/영상=false) */
+  minDraftOk: boolean;
 }
 
 // ───────────────────────── Employee-specific Onboarding ─────────────────────────

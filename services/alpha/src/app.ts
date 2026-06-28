@@ -2,7 +2,7 @@
 // AI 호출 0: 분석=규칙, 결과물=mock 템플릿. 대시보드/직원/자료/상태는 일반 앱 로직.
 import type { Id, OutputType, RoleFamily } from "../../../packages/shared-types/src/index.ts";
 import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from "../../../packages/assistant/src/work-loop.ts";
-import { onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
+import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
 import { AlphaStore, type AlphaTask, type Material, type TaskResult, type TaskStatus } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
@@ -44,27 +44,73 @@ export function registerTask(store: AlphaStore, title: string): AlphaTask {
   return task;
 }
 
-/** 보유 직원·정보 기준으로 업무 상태/부족 자료/추천 채용 재계산 */
+// ── 중앙화된 업무 계획(Alpha) ──
+// 모든 업무 유형에 동일 규칙 적용: 텍스트형(minDraftOk)은 정보/직원이 부족해도 초안 생성 가능
+// (필요 직군 부재 시 Writer가 대체 초안). 이미지/영상(minDraftOk=false)만 직원·자료 필요로 막힘.
+type SubPlanMode = "final" | "draft" | "blocked";
+interface AlphaPlan {
+  outputType: ReturnType<typeof toSubTasks>[number]["outputType"];
+  roleFamily: RoleFamily;
+  mode: SubPlanMode;
+  executor?: string;            // 결과를 만들 직원 persona
+  missingInfo: string[];
+  missingRole?: RoleFamily;     // 추천 채용(이상적 직군)
+  blockReason?: "staff" | "info";
+}
+
+function alphaPlans(store: AlphaStore, task: AlphaTask): AlphaPlan[] {
+  const info = new Set(store.data.companyInfo);
+  const writer = store.data.employees.find((e) => e.dna.genome.roleFamily === "content");
+  return toSubTasks(task.outputTypes).map((st): AlphaPlan => {
+    const base = planSubTask(st, store.data.employees, info);
+    const scope = getOutputScope(st.outputType);
+    if (base.status === "executable") {
+      return { outputType: st.outputType, roleFamily: st.roleFamily, missingInfo: [],
+        mode: base.confidence === "final" ? "final" : "draft", executor: base.selectedEmployeePersona };
+    }
+    if (base.status === "need_info") {
+      const emp = store.data.employees.find((e) => e.dna.genome.roleFamily === st.roleFamily);
+      if (scope.minDraftOk) {
+        return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
+          executor: emp?.dna.phenotype.persona ?? roleTitle(st.roleFamily), missingInfo: base.missingInfo };
+      }
+      return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "info", missingInfo: base.missingInfo };
+    }
+    // need_staff: 직군 부재
+    if (scope.minDraftOk && writer) {
+      // 텍스트형은 Writer가 대체 초안 작성 (이상적 직군은 추천 채용으로 표시)
+      return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "draft",
+        executor: writer.dna.phenotype.persona, missingInfo: [], missingRole: st.roleFamily };
+    }
+    return { outputType: st.outputType, roleFamily: st.roleFamily, mode: "blocked", blockReason: "staff", missingInfo: [], missingRole: st.roleFamily };
+  });
+}
+
+/** 보유 직원·정보 기준으로 업무 상태/부족 자료/추천 채용 재계산 (모든 유형 공통) */
 export function recompute(store: AlphaStore, task: AlphaTask): void {
   if (task.status === "approved") return;
-  const info = new Set(store.data.companyInfo);
-  const subTasks = toSubTasks(task.outputTypes);
-  const plans = subTasks.map((s) => planSubTask(s, store.data.employees, info));
-  task.missingInfo = uniq(plans.filter((p) => p.status === "need_info").flatMap((p) => p.missingInfo));
-  task.missingRoles = uniq(plans.filter((p) => p.status === "need_staff").flatMap((p) => p.missingRoleFamilies));
-  const executable = plans.some((p) => p.status === "executable");
-
-  // 일부 자료라도 있어 초안 생성이 가능한 subtask (정보 0%는 불가 — Trust First 하한선)
-  const partialPossible = plans.some((p) => p.status === "need_info" && p.readinessScore > 0);
-  const blockedInfo = task.missingInfo.length > 0;
+  const plans = alphaPlans(store, task);
+  task.missingInfo = uniq(plans.flatMap((p) => p.missingInfo));
+  task.missingRoles = uniq(plans.map((p) => p.missingRole).filter(Boolean) as RoleFamily[]);
+  const producible = plans.filter((p) => p.mode !== "blocked");
+  const allFinal = plans.length > 0 && plans.every((p) => p.mode === "final");
 
   if (task.results.length) task.status = "delivered";
-  else if (executable && !blockedInfo) task.status = task.reviseNote ? "revise" : "ready"; // 충분
-  else if (task.proceedAnyway && (executable || partialPossible)) task.status = "ready_with_missing_info"; // 이대로 진행
-  else if (blockedInfo) task.status = "awaiting_materials";   // 기본: 자료 더 필요
-  else if (executable) task.status = task.reviseNote ? "revise" : "ready";
-  else if (task.missingRoles.length) task.status = "needs_hire";
-  else task.status = "ready";
+  else if (producible.length === 0) task.status = task.missingRoles.length ? "needs_hire" : "awaiting_materials";
+  else if (allFinal) task.status = task.reviseNote ? "revise" : "ready";
+  else task.status = task.reviseNote ? "revise" : "ready_with_missing_info";
+}
+
+/** 카드의 단일 CTA(중앙화) — 모든 유형 동일 규칙 */
+export function taskCTA(store: AlphaStore, task: AlphaTask): { kind: "execute" | "proceed" | "blocked"; label: string } {
+  if (task.status === "ready") return { kind: "execute", label: "실행하기" };
+  if (task.status === "revise") return { kind: "proceed", label: "수정해서 다시 실행" };
+  if (task.status === "ready_with_missing_info") {
+    const providedSome = task.materials.length > 0
+      || toSubTasks(task.outputTypes).some((st) => st.requiredInfo.some((k) => store.data.companyInfo.includes(k)));
+    return { kind: "proceed", label: providedSome ? "이대로 초안으로 진행하기" : "최소 정보로 초안 진행하기" };
+  }
+  return { kind: "blocked", label: task.status === "needs_hire" ? "직원 채용 필요" : "자료 필요" };
 }
 
 // ── 자료 제공 (텍스트/URL/파일/이미지). Company Memory에 축적 + 업무 갱신 ──
@@ -75,37 +121,29 @@ export function provideMaterial(store: AlphaStore, taskId: Id, infoKey: string, 
   task.materials.push(m);
   if (!store.data.companyInfo.includes(infoKey)) store.data.companyInfo.push(infoKey); // Brand/Company Memory
   recompute(store, task);
-  // 같은 자료가 필요한 다른 업무도 갱신
   store.data.tasks.forEach((t) => t.id !== taskId && recompute(store, t));
   store.save();
   return task;
 }
 
-// ── 직원 실행 (mock 결과물 생성, AI 없음) ──
+// ── 직원 실행 (mock 결과물 생성, AI 없음) — 모든 유형 best-effort ──
 export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   recompute(store, task);
-  const runnable = ["ready", "revise", "ready_with_missing_info"].includes(task.status);
-  if (!runnable) return task; // 실행 불가 (자료가 너무 부족하거나 직원 없음)
-
-  const forced = task.status === "ready_with_missing_info" || !!task.proceedAnyway;
-  const info = new Set(store.data.companyInfo);
-  const plans = toSubTasks(task.outputTypes).map((s) => planSubTask(s, store.data.employees, info));
+  if (!["ready", "revise", "ready_with_missing_info"].includes(task.status)) return task; // 생성 가능한 부분이 없음
+  const plans = alphaPlans(store, task);
   const results: TaskResult[] = [];
   let partial = false;
   for (const p of plans) {
-    if (p.status === "executable") {
-      // 충분(final) 또는 일부(draft) — readiness가 결과 등급을 결정
-      results.push(mkResult(store, p, p.confidence === "final" ? "final" : "draft"));
-      if (p.confidence !== "final") partial = true;
-    } else if (forced && p.status === "need_info" && p.readinessScore > 0) {
-      // 일부 자료만으로 초안 진행 (Trust First: 0%는 제외)
-      results.push(mkResult(store, p, "draft"));
-      partial = true;
-    } else if (p.status !== "executable") {
-      partial = true; // 직원 부족/정보 0% 등으로 빠진 부분이 있음
-    }
+    if (p.mode === "blocked") { partial = true; continue; }
+    results.push({
+      outputType: p.outputType,
+      by: p.executor ?? roleTitle(p.roleFamily),
+      state: p.mode,
+      content: mockContent(p.outputType, store.data.company.name, p.executor ?? roleTitle(p.roleFamily)),
+    });
+    if (p.mode === "draft") partial = true;
   }
   task.results = results;
   task.partialMaterials = partial && results.length > 0;
@@ -115,20 +153,8 @@ export function executeTask(store: AlphaStore, taskId: Id): AlphaTask | null {
   return task;
 }
 
-function mkResult(store: AlphaStore, p: ReturnType<typeof planSubTask>, state: "final" | "draft"): TaskResult {
-  return {
-    outputType: p.subTask.outputType,
-    by: p.selectedEmployeePersona ?? roleTitle(p.subTask.roleFamily),
-    state,
-    content: mockContent(p.subTask.outputType, store.data.company.name, p.selectedEmployeePersona ?? roleTitle(p.subTask.roleFamily)),
-  };
-}
-
-/** "이대로 진행하기" — 일부 자료 미제공이어도 초안 진행 승인 후 실행. */
+/** "이대로 진행하기"(별칭) — executeTask가 best-effort로 생성하므로 동일 동작. */
 export function proceedWithPartial(store: AlphaStore, taskId: Id): AlphaTask | null {
-  const task = store.data.tasks.find((t) => t.id === taskId);
-  if (!task) return null;
-  task.proceedAnyway = true;
   return executeTask(store, taskId);
 }
 
@@ -220,11 +246,14 @@ export function resultsTab(tasks: AlphaTask[]) {
 }
 
 export function taskView(store: AlphaStore, t: AlphaTask) {
-  // 일부 자료만으로 진행 가능한가 (need_info 중 readiness>0 존재) — Trust First 하한선 적용
-  const info = new Set(store.data.companyInfo);
-  const plans = toSubTasks(t.outputTypes).map((s) => planSubTask(s, store.data.employees, info));
-  const canProceedPartial = t.status === "awaiting_materials"
-    && plans.some((p) => p.status === "need_info" && p.readinessScore > 0);
+  const cta = taskCTA(store, t);   // 모든 유형 동일 규칙(중앙화)
+  // 막힘(blocked) 사유와 다음 행동 (Trust First — 진행 불가일 때도 이유/다음 행동 노출)
+  const blocked = cta.kind === "blocked";
+  const nextActions: string[] = [];
+  if (blocked) {
+    t.missingRoles.forEach((r) => nextActions.push(`${roleTitle(r)} 채용하기`));
+    t.missingInfo.forEach((k) => nextActions.push(`${infoLabel(k)} 자료 제공하기`));
+  }
   return {
     id: t.id, title: t.title, status: t.status, statusLabel: STATUS_LABEL[t.status],
     assignees: uniq(t.requiredRoles).map(roleTitle),
@@ -233,7 +262,7 @@ export function taskView(store: AlphaStore, t: AlphaTask) {
     provided: t.materials.map((m) => ({ label: infoLabel(m.infoKey), kind: m.kind, value: m.value })),
     results: t.results,
     partialMaterials: !!t.partialMaterials,
-    canProceedPartial,
+    cta, blocked, nextActions,
     feedback: t.feedback ?? null,
   };
 }

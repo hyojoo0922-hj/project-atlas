@@ -165,20 +165,19 @@ function taskCard(t){
         <input type="file" id="file_${t.id}_${m.key}" style="max-width:120px">
         <button class="btn sm" onclick="provide('${t.id}','${m.key}')">제공</button></div>`;
     });
-    // 일부만 제공된 상태에서도 진행 가능 — "이대로 진행하기"
-    if(t.canProceedPartial){
-      inner+=`<div class="mt small" style="color:#e8c772">일부 자료가 아직 제공되지 않았습니다. 현재 자료만으로도 초안 진행은 가능하지만, 자료를 더 제공할수록 결과물이 더 정확해집니다.</div>
-        <div class="mt"><button class="btn2" onclick="proceed('${t.id}')">이대로 초안으로 진행하기</button></div>`;
-    }
   }
-  // 추천 채용 (업무 기준)
+  // 추천 채용 (업무 기준 — 비차단 업셀)
   if(t.recommendedHires.length){
-    inner+=`<div class="mt small">이 업무엔 더 필요해요: `+t.recommendedHires.map(r=>`<button class="btn2 sm" onclick="hire('${r.roleFamily}')">${esc(r.title)} 채용</button>`).join(" ")+`</div>`;
+    inner+=`<div class="mt small">더 정확하게 하려면: `+t.recommendedHires.map(r=>`<button class="btn2 sm" onclick="hire('${r.roleFamily}')">${esc(r.title)} 채용</button>`).join(" ")+`</div>`;
   }
-  // 실행 버튼 (실행 가능 / 일부 자료로 진행 / 수정 요청 후 재실행)
-  if(t.status==="ready"||t.status==="revise"||t.status==="ready_with_missing_info"){
-    const lbl=t.status==="revise"?"수정해서 다시 실행":(t.status==="ready_with_missing_info"?"이대로 초안으로 진행하기":"직원에게 실행시키기");
-    inner+=`<div class="mt"><button class="btn" onclick="${t.status==="ready_with_missing_info"?"proceed":"execute"}('${t.id}')">${lbl}</button></div>`;
+  // 단일 CTA(중앙화) — 모든 업무 유형 동일 흐름
+  if(t.cta && t.cta.kind!=="blocked"){
+    if(t.cta.label==="이대로 초안으로 진행하기"||t.cta.label==="최소 정보로 초안 진행하기")
+      inner+=`<div class="mt small" style="color:#e8c772">일부 자료가 아직 제공되지 않았습니다. 현재 자료만으로도 초안 진행은 가능하지만, 자료를 더 제공할수록 결과물이 더 정확해집니다.</div>`;
+    inner+=`<div class="mt"><button class="btn" onclick="execute('${t.id}')">${esc(t.cta.label)}</button></div>`;
+  } else if(t.cta && t.cta.kind==="blocked"){
+    inner+=`<div class="mt small" style="color:#f0a0c0">지금은 바로 진행할 수 없습니다. 아래가 필요합니다:</div>
+      <div class="small">${(t.nextActions||[]).map(a=>`· ${esc(a)}`).join("<br>")||"필요한 자료/직원을 확인해 주세요."}</div>`;
   }
   // 결과물 카드
   if(t.results.length){

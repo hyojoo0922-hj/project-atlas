@@ -35,15 +35,15 @@ export function computeReadiness(
 
 // ── Output Scope 레지스트리(유형별 사양) ──
 export const OUTPUT_SCOPE: Record<OutputType, OutputScope> = {
-  text: { type: "text", requiredInfo: ["topic", "tone"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "draft_ok" },
-  ad_copy: { type: "ad_copy", requiredInfo: ["brand-voice", "product-info", "target-audience"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "final_ge_90" },
-  social_post: { type: "social_post", requiredInfo: ["brand-voice", "channel"], requiredRoleFamilies: ["content"], requiredSkills: ["repurpose-to-channel"], costTier: "low", qualityBar: "draft_ok" },
-  product_page: { type: "product_page", requiredInfo: ["product-info", "product-image", "policy"], requiredRoleFamilies: ["content", "design"], requiredSkills: ["brand-voice-writer"], costTier: "med", qualityBar: "final_ge_90" },
-  image: { type: "image", requiredInfo: ["logo", "brand-color", "product-image", "design-reference"], requiredRoleFamilies: ["design"], requiredSkills: ["image-create"], costTier: "high", qualityBar: "final_ge_90" },
-  video: { type: "video", requiredInfo: ["storyboard", "brand-assets", "design-reference"], requiredRoleFamilies: ["design"], requiredSkills: ["video-create"], costTier: "very_high", qualityBar: "final_ge_90" },
-  document: { type: "document", requiredInfo: ["purpose", "source"], requiredRoleFamilies: ["content", "research"], requiredSkills: ["doc-writer"], costTier: "med", qualityBar: "draft_ok" },
-  report: { type: "report", requiredInfo: ["data", "period", "goal"], requiredRoleFamilies: ["research"], requiredSkills: ["report-builder"], costTier: "med", qualityBar: "final_ge_90" },
-  customer_reply: { type: "customer_reply", requiredInfo: ["faq", "tone", "policy"], requiredRoleFamilies: ["support"], requiredSkills: ["inquiry-responder"], costTier: "low", qualityBar: "final_ge_90" },
+  text: { type: "text", requiredInfo: ["topic", "tone"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "draft_ok", minDraftOk: true },
+  ad_copy: { type: "ad_copy", requiredInfo: ["brand-voice", "product-info", "target-audience"], requiredRoleFamilies: ["content"], requiredSkills: ["brand-voice-writer"], costTier: "low", qualityBar: "final_ge_90", minDraftOk: true },
+  social_post: { type: "social_post", requiredInfo: ["brand-voice", "channel"], requiredRoleFamilies: ["content"], requiredSkills: ["repurpose-to-channel"], costTier: "low", qualityBar: "draft_ok", minDraftOk: true },
+  product_page: { type: "product_page", requiredInfo: ["product-info", "product-image", "policy"], requiredRoleFamilies: ["content", "design"], requiredSkills: ["brand-voice-writer"], costTier: "med", qualityBar: "final_ge_90", minDraftOk: true },
+  image: { type: "image", requiredInfo: ["logo", "brand-color", "product-image", "design-reference"], requiredRoleFamilies: ["design"], requiredSkills: ["image-create"], costTier: "high", qualityBar: "final_ge_90", minDraftOk: false },
+  video: { type: "video", requiredInfo: ["storyboard", "brand-assets", "design-reference"], requiredRoleFamilies: ["design"], requiredSkills: ["video-create"], costTier: "very_high", qualityBar: "final_ge_90", minDraftOk: false },
+  document: { type: "document", requiredInfo: ["purpose", "source"], requiredRoleFamilies: ["content", "research"], requiredSkills: ["doc-writer"], costTier: "med", qualityBar: "draft_ok", minDraftOk: true },
+  report: { type: "report", requiredInfo: ["data", "period", "goal"], requiredRoleFamilies: ["research"], requiredSkills: ["report-builder"], costTier: "med", qualityBar: "final_ge_90", minDraftOk: true },
+  customer_reply: { type: "customer_reply", requiredInfo: ["faq", "tone", "policy"], requiredRoleFamilies: ["support"], requiredSkills: ["inquiry-responder"], costTier: "low", qualityBar: "final_ge_90", minDraftOk: true },
 };
 export function getOutputScope(type: OutputType): OutputScope { return OUTPUT_SCOPE[type]; }
 

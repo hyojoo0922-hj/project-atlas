@@ -37,8 +37,13 @@ ownerAssistant:
   role: [수신, 분석, 직원확인, 직원추천, 업무배분, 결과보고]
 ```
 
-## 5. 범위
-이번(메모 #008): 출근 시점·역할 **정의 + 상태**만. 실제 업무 분석/배분/보고 **Work Loop는 Sprint 2B**.
+## 5. Work Loop (MEMO #010)
+대표 비서의 실제 오케스트레이션 흐름(요청→분석→직원선택→정보/품질 게이트→배분→취합→보고)은
+[architecture/08 — Owner's Assistant Work Loop](../architecture/08-owner-assistant-work-loop.md) +
+[assistant-work-loop-spec](assistant-work-loop-spec.md)에 설계되어 있다.
+
+## 6. 범위
+출근 시점·역할(#008) + Work Loop 아키텍처(#010) **설계 완료**. 실제 업무 실행/결과물 생성은 **Sprint 2B**.
 
 ## 관련
 - [Customer Journey](customer-journey-spec.md) · [Company Creation Flow](company-creation-flow-spec.md)

@@ -15,6 +15,7 @@
 | [0009](0009-onboarding-and-customer-journey.md) | 온보딩·Customer Journey·AI 사업진단 기반 회사 자동설계 | Accepted |
 | [0010](0010-free-paid-boundary.md) | 무료/유료 경계 — Company Proposal↔Creation 분리(결제 게이트) | Accepted |
 | [0011](0011-trust-first-quality-boundary.md) | Trust First — 품질 경계·준비도·신뢰도·Output Scope·만족도 | Accepted |
+| [0012](0012-owner-assistant-work-loop.md) | 대표 비서 Work Loop 오케스트레이션 아키텍처 | Accepted |
 
 > 새 ADR: `NNNN-title.md`로 추가하고 이 표를 갱신.
 > ⭐ 헌법 개정: [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)(ADR 0005), [#002](../constitution/AMENDMENT-002-company-centric-organization.md)(ADR 0007), [#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md)(ADR 0008), [#004 AI 공동창업자](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md)(ADR 0009).

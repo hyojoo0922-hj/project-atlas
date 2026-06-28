@@ -10,6 +10,7 @@
 - [AI Business Diagnosis Specification](ai-business-diagnosis-spec.md) — 회사보다 사업을 먼저 진단
 - [Company Creation Flow Specification](company-creation-flow-spec.md) — Proposal(무료)↔Creation(유료, 결제 게이트)
 - [Owner's Assistant Specification](owner-assistant-spec.md) — 대표 비서(설립 후 출근)
+- [Assistant Work Loop Specification](assistant-work-loop-spec.md) — 비서 오케스트레이션(요청→분석→선택→게이트→배분→취합→보고)
 - [Employee Recommendation / Upsell](employee-recommendation-upsell-spec.md) — 부족 직원 채용 추천(수익 모델)
 - 우산: [Onboarding Architecture](../architecture/07-onboarding-architecture.md) · 경계: [free-paid-boundary](../business/free-paid-boundary.md)
 

@@ -80,7 +80,7 @@ Customer
 ✅ **Sprint 2A + 무료/유료 경계(#008) + Trust First 품질 구조(#009)**. 무료=진단·추천 / 유료=실행·운영. 인메모리, **51 tests green**.
 - 실행: `npm test` · `npm run demo:onboarding`(무료/유료 경계) · `npm run build:demo` (`npm run demo` = Sprint 1 운영루프)
 - 경계: [free-paid-boundary](docs/business/free-paid-boundary.md) · 품질: [quality-boundary](docs/specs/quality-boundary-spec.md) · 보고: [sprint-2a-report.md](docs/sprints/sprint-2a-report.md)
-- 다음: **Sprint 2B**(대표 비서 Work Loop·결과물 — Quality 게이트 적용·Satisfaction·Health·Growth·재추천)
+- 다음: **Sprint 2B 제안됨** — [대표 비서 Work Loop](docs/architecture/08-owner-assistant-work-loop.md) 설계 완료([제안서](docs/sprints/sprint-2b-proposal.md))
 
 > ⚠️ 아직 **구현하지 않는 것**: 로그인, 실제 결제 처리, 외부 AI API(Gateway mock·원가 $0), 직원 Work Loop/결과물 생성(2B), 영상/이미지 생성.
 > 🔒 **Trust First**: 결과물은 준비도/신뢰도 게이트(≥90 최종/70–89 초안/<70 정보요청)를 통과해야 한다. 부족하면 만들지 않고 요청.

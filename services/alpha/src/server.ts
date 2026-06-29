@@ -1,8 +1,11 @@
-// Atlas Alpha — zero-dep HTTP 서버 (CEO Dashboard). AI 호출 0.
-// 실행: npm run alpha  → http://localhost:4317
+// Atlas Alpha — zero-dep HTTP 서버 (CEO Dashboard).
+// 실행: npm run alpha  → http://localhost:4317 (같은 WiFi 핸드폰은 출력된 LAN URL로 접속)
+// 텍스트 생성: 기본 mock. ATLAS_LLM=on + ANTHROPIC_API_KEY(.env) 시 실제 Claude(allowlist 유형만).
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import { networkInterfaces } from "node:os";
+import { llmStatus } from "../../../packages/cost-control/src/text-gateway.ts";
 import type { Material, RoleFamily } from "../../../packages/shared-types/src/index.ts";
 import type { ImageChoice, MaterialCategory } from "./store.ts";
 import { AlphaStore } from "./store.ts";
@@ -18,7 +21,19 @@ const parseItems = (raw: unknown): MaterialItem[] =>
     : [];
 
 const PORT = Number(process.env.PORT ?? 4317);
+const HOST = process.env.HOST ?? "0.0.0.0";   // 0.0.0.0 = 같은 WiFi의 핸드폰에서 접속 가능
 const HTML = `${import.meta.dirname}/../public/index.html`;
+
+/** 같은 네트워크(핸드폰)에서 접속 가능한 LAN IPv4 주소 목록 */
+const lanAddresses = (): string[] => {
+  const out: string[] = [];
+  for (const ifaces of Object.values(networkInterfaces())) {
+    for (const i of ifaces ?? []) {
+      if (i.family === "IPv4" && !i.internal) out.push(i.address);
+    }
+  }
+  return out;
+};
 const store = new AlphaStore();
 const sessions = new Set<string>();
 
@@ -135,8 +150,18 @@ async function handle(url: string, req: import("node:http").IncomingMessage, res
   }
 }
 
-server.listen(PORT, () => {
-  console.log(`\n  🏢 Atlas Alpha (CEO Dashboard) → http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  const llm = llmStatus();
+  console.log(`\n  🏢 Atlas Alpha (CEO Dashboard)`);
+  console.log(`  ▸ 이 컴퓨터:   http://localhost:${PORT}`);
+  for (const ip of lanAddresses()) {
+    console.log(`  ▸ 핸드폰(같은 WiFi): http://${ip}:${PORT}`);
+  }
   console.log(`  로그인: 이름 자유 / 비밀번호 "${ALPHA_PASS}"`);
-  console.log(`  데이터: ${process.env.ATLAS_DATA ?? ".atlas-data/alpha.json"}\n`);
+  console.log(`  데이터: ${process.env.ATLAS_DATA ?? ".atlas-data/alpha.json"}`);
+  // 텍스트 생성 상태 (키 값은 노출하지 않음)
+  if (llm.active) console.log(`  텍스트 생성: 실제 AI ON (model=${llm.model})`);
+  else if (llm.on && !llm.hasKey) console.log(`  텍스트 생성: ⚠️ ATLAS_LLM=on 이지만 ANTHROPIC_API_KEY 없음 → mock 폴백`);
+  else console.log(`  텍스트 생성: mock (실제 AI OFF — 켜려면 ATLAS_LLM=on + ANTHROPIC_API_KEY)`);
+  console.log("");
 });

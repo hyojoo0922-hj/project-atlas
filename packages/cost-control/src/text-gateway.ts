@@ -20,6 +20,13 @@ export interface GenResult {
 }
 export type TextGenerator = (r: GenRequest) => Promise<GenResult>;
 
+// 실제 텍스트 생성 허용 유형(allowlist). 그 외(text/document/image/video 등)는 안전하게 mock.
+// 이미지/영상은 절대 실제 생성하지 않는다(image_brief는 텍스트 기획안이므로 허용).
+export const REAL_TEXT_TYPES: ReadonlySet<OutputType> = new Set<OutputType>([
+  "social_post", "ad_copy", "report", "customer_reply", "checklist" as OutputType, "image_brief",
+]);
+export const isRealTextType = (t: OutputType): boolean => REAL_TEXT_TYPES.has(t);
+
 // Cost First: 가장 저렴한 모델. (claude-api: Haiku 4.5 = $1/$5 per MTok)
 const MODEL = process.env.ATLAS_LLM_MODEL ?? "claude-haiku-4-5";
 const PRICE: Record<string, { in: number; out: number }> = {
@@ -45,7 +52,8 @@ export const mockGenerator: TextGenerator = async (r) => ({
 /** 실제 Claude 호출 (zero-dep fetch). 실패 시 mock으로 안전 폴백. */
 export const anthropicGenerator: TextGenerator = async (r) => {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return mockGenerator(r);
+  if (!key) return mockGenerator(r);                 // 키 없음 → 안전 폴백
+  if (!isRealTextType(r.outputType)) return mockGenerator(r); // allowlist 밖 → 실제 호출 금지
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -73,4 +81,11 @@ export const anthropicGenerator: TextGenerator = async (r) => {
 /** 환경에 따라 생성기 선택. 기본 mock(테스트/오프라인 안전). */
 export function makeTextGenerator(): TextGenerator {
   return process.env.ATLAS_LLM === "on" ? anthropicGenerator : mockGenerator;
+}
+
+/** 현재 LLM 설정 상태(서버 로그/진단용 — 키 값은 노출하지 않음). */
+export function llmStatus(): { on: boolean; hasKey: boolean; active: boolean; model: string } {
+  const on = process.env.ATLAS_LLM === "on";
+  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  return { on, hasKey, active: on && hasKey, model: MODEL };
 }

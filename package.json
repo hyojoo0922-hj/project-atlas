@@ -10,7 +10,7 @@
     "demo": "node --experimental-strip-types services/demo/src/run-demo.ts",
     "demo:onboarding": "node --experimental-strip-types services/demo/src/run-onboarding-demo.ts",
     "build:demo": "node --experimental-strip-types services/demo/src/build-demo.ts",
-    "alpha": "node --experimental-strip-types services/alpha/src/server.ts"
+    "alpha": "node --env-file-if-exists=.env --experimental-strip-types services/alpha/src/server.ts"
   },
   "workspaces": [
     "packages/*",

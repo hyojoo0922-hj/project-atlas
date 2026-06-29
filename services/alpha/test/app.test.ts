@@ -4,8 +4,8 @@ import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
   addVaultMaterial, addVaultMaterials, ALPHA_PASS, approveTask, dashboard, editVaultItem, executeTask, hideTask,
-  hideVaultItem, hire, login, proceedWithPartial, provideMaterial, provideMaterials, registerTask, reviseTask,
-  setTextGenerator, taskView, vaultView,
+  hideVaultItem, hire, IMAGE_CREDIT_COST, login, proceedWithPartial, provideMaterial, provideMaterials, registerTask,
+  reviseTask, setImageChoice, setTextGenerator, taskView, topUpCredits, vaultView,
 } from "../src/app.ts";
 import { makeTextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 
@@ -52,7 +52,7 @@ test("자료 제공 → 실행 가능, Company Memory에 축적", () => {
   const t2 = s.data.tasks.find((x) => x.id === t.id)!;
   // 콘텐츠는 최종본 가능하지만 이미지(design) 부분이 남아 일부 진행 상태
   assert.equal(t2.status, "ready_with_missing_info");
-  assert.equal(taskView(s, t2).cta.kind, "proceed");      // 단일 CTA 노출
+  assert.equal(taskView(s, t2).cta.kind, "image_choice"); // 이미지 포함 → 진행 방식 선택 카드
   assert.ok(s.data.companyInfo.includes("brand-voice"));  // 메모리 축적
 });
 
@@ -77,33 +77,48 @@ test("모든 텍스트형 업무: 자료 0%여도 '최소 정보로 초안' CTA 
   }
 });
 
-test("이미지 업무: Designer 없어도 막히지 않고 '이미지 기획안' 대체 진행 + Designer 추천 유지", async () => {
+test("이미지 업무: 기획안 자동 제공 안 함 — 선택 카드 노출, 기획안 선택 시에만 image_brief", async () => {
   const s = tmp();
   const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");   // image(design), 디자이너 없음
   const v = taskView(s, t);
-  assert.equal(v.cta.kind, "proceed");                      // 막히지 않음
+  assert.equal(v.cta.kind, "image_choice");                 // 기획안 자동 X → 선택 요구
+  assert.equal(v.imageChoiceNeeded, true);
   assert.ok(v.recommendedHires.some((h) => h.roleFamily === "design")); // Designer 추천 유지
+  // 선택 전 실행 → 이미지 결과 생성 안 함
+  const pre = (await executeTask(s, t.id))!;
+  assert.equal(pre.results.length, 0);
+  assert.equal(pre.needsImageChoice, true);
+  // 기획안 선택 → image_brief 제공(요청 유형 표시)
+  setImageChoice(s, t.id, "brief");
   const r = (await executeTask(s, t.id))!;
   assert.equal(r.status, "delivered");
   const res = r.results[0]!;
-  assert.equal(res.outputType, "image_brief");             // 대체 산출물(실제 image 아님)
-  assert.equal(res.requestedOutputType, "image");          // 원 요청 기록
-  assert.ok(res.content.includes("실제 이미지는 아직 생성하지 않았습니다")); // Trust First 명시
+  assert.equal(res.outputType, "image_brief");
+  assert.equal(res.requestedOutputType, "image");
+  assert.equal(res.requestType, "image_brief");
+  assert.ok(res.content.includes("실제 이미지는 아직 생성하지 않았습니다"));
 });
 
-test("점6 — '신규메뉴 연출컷 이미지 만들어줘' 전체 흐름", async () => {
+test("점6 — '신규메뉴 연출컷 이미지' 1회 크레딧 사용 → '생성 준비됨'까지(실제 생성 OFF)", async () => {
   const s = tmp();
+  s.data.credits = 2;
   const t = registerTask(s, "신규메뉴 연출컷 이미지 만들어줘");
   assert.ok(t.outputTypes.includes("image"));              // image 분석
-  const v = taskView(s, t);
-  assert.equal(v.cta.label, "최소 정보로 이미지 기획안 만들기"); // 자료 0% CTA
-  assert.ok(v.neededMaterials.length > 0);                 // 자료 요청 표시
-  const done = (await proceedWithPartial(s, t.id))!;       // 최소 정보로 진행
+  assert.equal(taskView(s, t).cta.kind, "image_choice");   // 선택 카드
+  setImageChoice(s, t.id, "credit");                       // 1회 크레딧 사용 선택
+  const done = (await executeTask(s, t.id))!;
   assert.equal(done.status, "delivered");
-  assert.ok(done.results.some((x) => x.outputType === "image_brief"));
-  assert.ok(done.partialMaterials);
-  approveTask(s, done.id, { overall: 5 });                 // 승인
-  assert.ok(dashboard(s).deliverables.some((x) => x.taskId === done.id && x.approved)); // 결과물 탭
+  const res = done.results.find((x) => x.requestType === "image_credit")!;
+  assert.equal(res.state, "pending");                      // 생성 준비됨까지만
+  assert.equal(res.creditsUsed, 1);
+  assert.ok(res.content.includes("준비됨"));
+  assert.equal(s.data.credits, 1);                         // 크레딧 1 차감
+  // Ledger 기록(예상 크레딧 + 비용)
+  const led = s.data.usage.find((u) => u.requestType === "image_credit")!;
+  assert.equal(led.credits, 1);
+  assert.ok(led.costUsd > 0);
+  approveTask(s, done.id, { overall: 5 });
+  assert.ok(dashboard(s).deliverables.some((x) => x.taskId === done.id && x.approved));
 });
 
 test("승인 / 수정 요청 상태 전이", async () => {
@@ -441,6 +456,76 @@ test("자료 숨김: 자동 활용에서 제외 → 업무가 해당 자료를 �
   assert.ok(taskView(s, t2).neededMaterials.some((m) => m.key === "brand-voice")); // 다시 요청
   // 기존 업무도 재계산되어 brand-voice를 다시 필요로 함
   assert.ok(taskView(s, t1).neededMaterials.some((m) => m.key === "brand-voice"));
+});
+
+test("크레딧 부족: 1회 크레딧 선택했지만 잔액 부족 → 실행 안 함 + 충전/채용 CTA", async () => {
+  const s = tmp();
+  s.data.credits = 0;
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "credit");
+  const v = taskView(s, t);
+  assert.equal(v.cta.kind, "credit_blocked");              // 충전/채용 CTA
+  assert.equal(v.creditShortfall, true);
+  const done = (await executeTask(s, t.id))!;
+  assert.ok(!done.results.some((r) => r.requestType === "image_credit")); // 실행 안 함
+  assert.equal(done.creditShortfall, true);
+  assert.equal(s.data.credits, 0);                         // 차감 없음
+});
+
+test("크레딧 충전(placeholder): 잔액 증가 후 크레딧 경로 실행 가능", async () => {
+  const s = tmp();
+  s.data.credits = 0;
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "credit");
+  const after = topUpCredits(s);                           // placeholder 충전
+  assert.ok(after >= IMAGE_CREDIT_COST);
+  assert.equal(taskView(s, t).cta.kind, "execute");        // 충전 후 실행 가능
+  const done = (await executeTask(s, t.id))!;
+  assert.ok(done.results.some((r) => r.requestType === "image_credit"));
+});
+
+test("Designer 채용 선택: 디자이너 자동 채용 + Designer 작성 기획안(image_brief)", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "designer");
+  assert.ok(s.data.employees.some((e) => e.dna.genome.roleFamily === "design")); // 자동 채용
+  const done = (await executeTask(s, t.id))!;
+  const res = done.results[0]!;
+  assert.equal(res.outputType, "image_brief");
+  assert.equal(res.requestType, "image_designer_brief");
+  assert.equal(res.by, "디자이너");
+});
+
+test("텍스트 생성도 Ledger에 크레딧(0)·비용·요청유형(text) 기록", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  await executeTask(s, t.id);
+  const led = s.data.usage.find((u) => u.requestType === "text")!;
+  assert.equal(led.credits, 0);
+  assert.equal(typeof led.costUsd, "number");
+});
+
+test("dashboard에 크레딧 잔액과 1회 이미지 비용이 노출된다", () => {
+  const s = tmp();
+  s.data.credits = 5;
+  const d = dashboard(s);
+  assert.equal(d.credits, 5);
+  assert.equal(d.imageCreditCost, IMAGE_CREDIT_COST);
+});
+
+test("결과물 탭: 크레딧/요청 유형이 카드에 표시된다", async () => {
+  const s = tmp();
+  s.data.credits = 2;
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "credit");
+  const done = (await executeTask(s, t.id))!;
+  approveTask(s, done.id, { overall: 5 });
+  const card = dashboard(s).deliverables.find((x) => x.taskId === done.id)!;
+  assert.equal(card.requestType, "image_credit");
+  assert.equal(card.creditsUsed, 1);
+  assert.equal(card.state, "pending");
 });
 
 test("persistence: 재시작 후 업무·자료 유지", () => {

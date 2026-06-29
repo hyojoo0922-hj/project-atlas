@@ -23,13 +23,20 @@ export interface Material {
   byEmployeeRole?: RoleFamily;   // 어떤 직원이 요청했는가
 }
 
+/** 이미지 요청 진행 방식 (수익화 선택) */
+export type ImageChoice = "designer" | "credit" | "brief";
+/** 결과물 요청 유형 (Ledger/표시용) */
+export type RequestType = "text" | "image_credit" | "image_brief" | "image_designer_brief";
+
 /** mock 결과물 (실제 생성은 Sprint 3) */
 export interface TaskResult {
   outputType: OutputType;          // 실제 전달된 산출물 유형(이미지면 image_brief)
   requestedOutputType?: OutputType; // 원래 요청 유형(예: image) — 대체 산출물 구분용
   by: string;             // 담당 직원 persona
-  state: "final" | "draft";
+  state: "final" | "draft" | "pending";  // pending: 이미지 생성 대기/준비됨(실제 생성 OFF)
   content: string;        // mock/placeholder 텍스트
+  requestType?: RequestType;   // 결과물 요청 유형
+  creditsUsed?: number;        // 이 결과물에 사용된 크레딧(이미지 크레딧 경로)
 }
 
 export interface AlphaTask {
@@ -48,9 +55,12 @@ export interface AlphaTask {
   partialMaterials?: boolean;    // 결과가 일부 자료 부족 상태로 생성됨
   hidden?: boolean;              // 숨김 처리(삭제 아님 — Satisfaction/감사 활용 위해 보존)
   archivedAt?: string;          // 숨김 처리 시각(ISO)
+  imageChoice?: ImageChoice;     // 이미지 요청 진행 방식 선택(미선택이면 선택 카드 노출)
+  needsImageChoice?: boolean;    // 이미지 subtask가 선택 대기 중
+  creditShortfall?: boolean;     // 크레딧 부족으로 이미지 생성 미실행
 }
 
-/** AI 호출 원가/사용량 내부 기록 (고객 비노출) */
+/** AI 호출 원가/사용량 + 크레딧 내부 기록 (Usage Ledger) */
 export interface UsageEntry {
   taskId: Id;
   outputType: OutputType;
@@ -59,6 +69,8 @@ export interface UsageEntry {
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
+  credits: number;             // 예상/차감 크레딧 (텍스트=0, 이미지 크레딧=IMAGE_CREDIT_COST)
+  requestType: RequestType;    // 요청 유형
 }
 
 /** Company Knowledge Vault 카테고리 (대표가 분류하는 자료 묶음) */
@@ -90,8 +102,9 @@ export interface AlphaData {
   employees: CompanyEmployee[];
   companyInfo: string[];        // 보유 정보 키 (Company Memory) — 자동 활용 판단의 단일 기준
   tasks: AlphaTask[];
-  usage: UsageEntry[];          // 결과물 생성 시 AI 원가/사용량 기록
+  usage: UsageEntry[];          // 결과물 생성 시 AI 원가/사용량/크레딧 기록(Ledger)
   vault: VaultItem[];           // Company Knowledge Vault (자료 인박스)
+  credits: number;              // 크레딧 잔액 (Placeholder — 실결제 없음)
 }
 
 /** 데이터 스키마 버전. 구버전(예: 채팅 시절 tasks)과 호환되지 않으면 새로 부트스트랩.
@@ -168,5 +181,5 @@ function bootstrap(): AlphaData {
     mkEmp(depOps, "operations", "운영 매니저", "responder"),
     mkEmp(depMkt, "content", "콘텐츠 라이터", "creator"),
   ];
-  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [], usage: [], vault: [] };
+  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [], usage: [], vault: [], credits: 2 };
 }

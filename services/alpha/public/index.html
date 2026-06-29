@@ -90,10 +90,15 @@ async function doLogin(){
   render();
 }
 function outLabel(t){return ({image_brief:"이미지 제작 기획안",ad_copy:"광고 카피",social_post:"SNS 포스트",customer_reply:"고객 응대",report:"리포트",text:"텍스트",document:"문서",product_page:"상세페이지"})[t]||t;}
+function reqTypeLabel(rt){return ({text:"텍스트",image_credit:"이미지 생성(크레딧)",image_brief:"이미지 기획안",image_designer_brief:"Designer 기획안"})[rt]||"";}
 function resultMeta(r){
   const alt = r.requestedOutputType && r.requestedOutputType!==r.outputType;
-  return `${outLabel(r.outputType)} · ${r.state==="final"?"최종본":"초안"} · ${esc(r.by)}`
-    + (alt?` <span class="pill p-wait">실제 ${esc(r.requestedOutputType)} 아님</span>`:"");
+  const st = r.state==="final"?"최종본":r.state==="pending"?"생성 준비됨":"초안";
+  let s = `${outLabel(r.outputType)} · ${st} · ${esc(r.by)}`;
+  if(alt) s+=` <span class="pill p-wait">실제 ${esc(r.requestedOutputType)} 아님</span>`;
+  if(r.requestType) s+=` <span class="pill p-done">${esc(reqTypeLabel(r.requestType))}</span>`;
+  if(r.creditsUsed) s+=` <span class="pill p-wait">크레딧 ${r.creditsUsed}</span>`;
+  return s;
 }
 function statusPill(s){
   const m={ready:["p-ready","실행 가능"],ready_with_missing_info:["p-wait","일부 자료로 진행"],awaiting_materials:["p-wait","자료 대기"],needs_hire:["p-hire","직원 필요"],delivered:["p-done","결과 완료"],approved:["p-ok","승인됨"],revise:["p-wait","수정 요청"]};
@@ -326,6 +331,26 @@ function renderInner(){
   $("app").innerHTML=h;
 }
 
+function imageChoiceCard(t){
+  const c=t.credits, cost=t.imageCreditCost, low=c<cost;
+  return `<div class="card warn" style="margin:10px 0 0">
+    <div class="b">이미지 요청 — 진행 방식 선택</div>
+    <div class="muted small mt">실제 이미지 생성은 아직 제공되지 않습니다. 진행 방식을 선택하세요. (현재 크레딧 ${c})</div>
+    <div class="stack mt">
+      <button class="btn2" onclick="imageChoice('${t.id}','designer')">① Designer 채용하기${t.designerHired?' (채용됨)':''}</button>
+      <button class="btn2" onclick="imageChoice('${t.id}','credit')"${low?' disabled':''}>② 1회 이미지 생성 크레딧 사용 (크레딧 ${cost}${low?' · 잔액 부족':''})</button>
+      <button class="btn2" onclick="imageChoice('${t.id}','brief')">③ 기획안만 받기</button>
+      ${low?`<button class="btn sm" onclick="topup()">크레딧 충전 (placeholder)</button>`:""}</div></div>`;
+}
+function creditBlockedCard(t){
+  return `<div class="card danger" style="margin:10px 0 0">
+    <div class="b">크레딧이 부족합니다 (현재 ${t.credits} · 필요 ${t.imageCreditCost})</div>
+    <div class="muted small mt">실행하지 않았습니다. 충전하거나 Designer 채용/기획안으로 전환하세요.</div>
+    <div class="row mt" style="gap:6px;flex-wrap:wrap">
+      <button class="btn" onclick="topup()">크레딧 충전 (placeholder)</button>
+      <button class="btn2" onclick="imageChoice('${t.id}','designer')">Designer 채용으로 전환</button>
+      <button class="btn2" onclick="imageChoice('${t.id}','brief')">기획안만 받기</button></div></div>`;
+}
 function taskCard(t){
   let inner=`<div class="row between"><div class="b">${esc(t.title)}</div>
     <div class="row" style="gap:6px">${statusPill(t.status)}<button class="x" title="숨기기" onclick="hideCard('${t.id}')">✕</button></div></div>
@@ -361,12 +386,17 @@ function taskCard(t){
   if(t.recommendedHires.length){
     inner+=`<div class="mt small">더 정확하게 하려면: `+t.recommendedHires.map(r=>`<button class="btn2 sm" onclick="hire('${r.roleFamily}')">${esc(r.title)} 채용</button>`).join(" ")+`</div>`;
   }
-  // 단일 CTA(중앙화) — 모든 업무 유형 동일 흐름
-  if(t.cta && t.cta.kind!=="blocked"){
+  // 단일 CTA(중앙화) — 이미지 요청은 선택/크레딧 게이트
+  const k=t.cta&&t.cta.kind;
+  if(k==="image_choice"){
+    inner+=imageChoiceCard(t);
+  } else if(k==="credit_blocked"){
+    inner+=creditBlockedCard(t);
+  } else if(t.cta && k!=="blocked"){
     if(t.cta.label==="이대로 초안으로 진행하기"||t.cta.label==="최소 정보로 초안 진행하기")
       inner+=`<div class="mt small" style="color:#e8c772">일부 자료가 아직 제공되지 않았습니다. 현재 자료만으로도 초안 진행은 가능하지만, 자료를 더 제공할수록 결과물이 더 정확해집니다.</div>`;
     inner+=`<div class="mt"><button class="btn" onclick="execute('${t.id}')">${esc(t.cta.label)}</button></div>`;
-  } else if(t.cta && t.cta.kind==="blocked"){
+  } else if(k==="blocked"){
     inner+=`<div class="mt small" style="color:#f0a0c0">지금은 바로 진행할 수 없습니다. 아래가 필요합니다:</div>
       <div class="small">${(t.nextActions||[]).map(a=>`· ${esc(a)}`).join("<br>")||"필요한 자료/직원을 확인해 주세요."}</div>`;
   }
@@ -407,6 +437,8 @@ async function provide(taskId,key){
 async function execute(taskId){const r=await api("/api/execute",{taskId});DB=r.dashboard;render();}
 async function proceed(taskId){const r=await api("/api/proceed",{taskId});DB=r.dashboard;render();}
 async function hire(roleFamily){const r=await api("/api/hire",{roleFamily});DB=r.dashboard;render();}
+async function imageChoice(taskId,choice){const r=await api("/api/image-choice",{taskId,choice});DB=r.dashboard;render();}
+async function topup(){const r=await api("/api/credits/topup",{});DB=r.dashboard;render();}
 async function addVault(){
   const cat=($("vcat")||{}).value||"etc", note=($("vnote")||{}).value.trim();
   const items=rowsToItems($("vrows"));

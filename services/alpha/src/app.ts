@@ -5,9 +5,14 @@ import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from ".
 import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
 import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 import { bySpecialization, recommendForOutput } from "../../../packages/hq-catalog/src/hq-catalog.ts";
-import { AlphaStore, type AlphaTask, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
+import { AlphaStore, type AlphaTask, type ImageChoice, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
+
+// ── 크레딧/이미지 수익화 게이트 (Placeholder — 실결제·실제 이미지 생성 없음) ──
+export const IMAGE_CREDIT_COST = 1;        // 1회 이미지 생성에 필요한 크레딧
+const IMAGE_EST_USD = 0.04;                // 이미지 생성 예상 원가(Placeholder, 내부 기록용)
+const TOPUP_AMOUNT = 3;                     // 충전 placeholder 단위
 
 // 텍스트 생성기(기본 mock — 오프라인/테스트 안전). 서버가 실제 AI로 교체 가능.
 let textGenerator: TextGenerator = makeTextGenerator();
@@ -63,6 +68,7 @@ interface AlphaPlan {
   missingInfo: string[];
   missingRole?: RoleFamily;     // 추천 채용(이상적 직군)
   blockReason?: "staff" | "info";
+  isVisual?: boolean;           // 이미지/영상 — 선택(채용/크레딧/기획안) 흐름 대상
 }
 
 const isVisual = (t: string): boolean => t === "image" || t === "video";
@@ -80,6 +86,7 @@ function alphaPlans(store: AlphaStore, task: AlphaTask): AlphaPlan[] {
         mode: "draft", executor: writer?.dna.phenotype.persona ?? "대표 비서",
         missingInfo: st.requiredInfo.filter((k) => !info.has(k)),
         missingRole: hasDesigner ? undefined : "design",
+        isVisual: true,
       };
     }
     const base = planSubTask(st, store.data.employees, info);
@@ -121,15 +128,27 @@ export function recompute(store: AlphaStore, task: AlphaTask): void {
   else task.status = task.reviseNote ? "revise" : "ready_with_missing_info";
 }
 
-/** 카드의 단일 CTA(중앙화) — 모든 유형 동일 규칙 */
-export function taskCTA(store: AlphaStore, task: AlphaTask): { kind: "execute" | "proceed" | "blocked"; label: string } {
+export type CTAKind = "execute" | "proceed" | "blocked" | "image_choice" | "credit_blocked";
+
+/** 카드의 단일 CTA(중앙화). 이미지 요청은 선택(채용/크레딧/기획안) → 크레딧 게이트 → 실행 순. */
+export function taskCTA(store: AlphaStore, task: AlphaTask): { kind: CTAKind; label: string } {
+  const visual = task.outputTypes.some(isVisual);
+  if (visual) {
+    // 1) 진행 방식 미선택 → 선택 카드 (기획안 자동 제공하지 않음)
+    if (!task.imageChoice) return { kind: "image_choice", label: "이미지 진행 방식 선택" };
+    // 2) 크레딧 경로인데 잔액 부족 → 충전/채용 CTA (실행 안 함)
+    if (task.imageChoice === "credit" && store.data.credits < IMAGE_CREDIT_COST)
+      return { kind: "credit_blocked", label: "크레딧 부족 — 충전 또는 Designer 채용" };
+    // 3) 선택 완료 → 실행
+    if (task.imageChoice === "credit") return { kind: "execute", label: `이미지 생성 진행 (크레딧 ${IMAGE_CREDIT_COST} 사용)` };
+    if (task.imageChoice === "designer") return { kind: "execute", label: "Designer 기획안 진행" };
+    return { kind: "execute", label: "이미지 기획안 받기" };
+  }
   if (task.status === "ready") return { kind: "execute", label: "실행하기" };
   if (task.status === "revise") return { kind: "proceed", label: "수정해서 다시 실행" };
   if (task.status === "ready_with_missing_info") {
     const providedSome = task.materials.length > 0
       || toSubTasks(task.outputTypes).some((st) => st.requiredInfo.some((k) => store.data.companyInfo.includes(k)));
-    const imageOnly = task.outputTypes.length > 0 && task.outputTypes.every(isVisual);
-    if (imageOnly) return { kind: "proceed", label: providedSome ? "이미지 기획안으로 진행하기" : "최소 정보로 이미지 기획안 만들기" };
     return { kind: "proceed", label: providedSome ? "이대로 초안으로 진행하기" : "최소 정보로 초안 진행하기" };
   }
   return { kind: "blocked", label: task.status === "needs_hire" ? "직원 채용 필요" : "자료 필요" };
@@ -258,7 +277,21 @@ export function vaultView(store: AlphaStore) {
   }));
 }
 
-// ── 직원 실행 — 결과물 생성 순간에만 AI 호출(없으면 mock). 모든 유형 best-effort ──
+const designerPersona = (store: AlphaStore): string | undefined =>
+  store.data.employees.find((e) => e.dna.genome.roleFamily === "design")?.dna.phenotype.persona;
+const writerPersona = (store: AlphaStore): string | undefined =>
+  store.data.employees.find((e) => e.dna.genome.roleFamily === "content")?.dna.phenotype.persona;
+
+function imagePendingContent(company: string, by: string): string {
+  return [
+    `🖼️ 이미지 생성 준비됨 · ${by}`,
+    `1회 이미지 생성 크레딧을 사용했습니다. (크레딧 ${IMAGE_CREDIT_COST} 차감)`,
+    `⚠️ 실제 이미지 생성은 아직 비활성화되어 있어 현재는 "생성 대기/준비됨" 상태까지만 진행됩니다.`,
+    `생성이 활성화되면 ${company}의 요청 이미지가 이 카드에 표시됩니다. (실제 생성 OFF)`,
+  ].join("\n");
+}
+
+// ── 직원 실행 — 결과물 생성 순간에만 AI 호출(없으면 mock). 이미지는 선택/크레딧 게이트 적용 ──
 export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaTask | null> {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
@@ -266,13 +299,51 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
   if (!["ready", "revise", "ready_with_missing_info"].includes(task.status)) return task; // 생성 가능한 부분이 없음
   const plans = alphaPlans(store, task);
   const results: TaskResult[] = [];
-  let partial = false;
+  let partial = false, needsImageChoice = false, creditShortfall = false;
   for (const p of plans) {
     if (p.mode === "blocked") { partial = true; continue; }
+
+    // ── 이미지/영상: 선택(채용/크레딧/기획안)에 따라 분기. 실제 생성은 하지 않음 ──
+    if (p.isVisual) {
+      const choice = task.imageChoice;
+      if (!choice) { needsImageChoice = true; partial = true; continue; }   // 선택 전엔 결과 생성 안 함
+      if (choice === "credit") {
+        if (store.data.credits < IMAGE_CREDIT_COST) { creditShortfall = true; partial = true; continue; }
+        store.data.credits -= IMAGE_CREDIT_COST;                            // 크레딧 차감(실결제 아님)
+        const by = designerPersona(store) ?? writerPersona(store) ?? "대표 비서";
+        results.push({
+          outputType: p.outputType, requestedOutputType: p.outputType, by,
+          state: "pending", requestType: "image_credit", creditsUsed: IMAGE_CREDIT_COST,
+          content: imagePendingContent(store.data.company.name, by),
+        });
+        store.data.usage.push({
+          taskId: task.id, outputType: p.outputType, model: "image-gen(off)", mode: "mock",
+          inputTokens: 0, outputTokens: 0, costUsd: IMAGE_EST_USD, credits: IMAGE_CREDIT_COST, requestType: "image_credit",
+        });
+        continue;
+      }
+      // brief / designer → image_brief (designer 선택 시 디자이너 작성 = fallback 기획안)
+      const designer = designerPersona(store);
+      const by = choice === "designer" && designer ? designer : (writerPersona(store) ?? "대표 비서");
+      const fallbackText = mockContent("image_brief", store.data.company.name, by);
+      const gen = await textGenerator({
+        outputType: "image_brief", system: buildSystem(store, by, true),
+        prompt: buildPrompt(store, task, "image_brief", true), fallbackText, draft: true,
+      });
+      const requestType = choice === "designer" ? "image_designer_brief" : "image_brief";
+      results.push({ outputType: "image_brief", requestedOutputType: p.outputType, by, state: "draft", requestType, content: gen.text });
+      store.data.usage.push({
+        taskId: task.id, outputType: "image_brief", model: gen.model, mode: gen.mode,
+        inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd, credits: 0, requestType,
+      });
+      partial = true;
+      continue;
+    }
+
+    // ── 텍스트형 ──
     const by = p.executor ?? roleTitle(p.roleFamily);
     const draft = p.mode === "draft";
     const fallbackText = mockContent(p.deliveredType, store.data.company.name, by);
-    // 실제 결과물 생성은 이 순간에만 (AI 호출). 키 없거나 실패 시 mock.
     const gen = await textGenerator({
       outputType: p.deliveredType,
       system: buildSystem(store, by, draft),
@@ -282,20 +353,43 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
     results.push({
       outputType: p.deliveredType,
       requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
-      by, state: p.mode, content: gen.text,
+      by, state: p.mode, requestType: "text", content: gen.text,
     });
     store.data.usage.push({
       taskId: task.id, outputType: p.deliveredType, model: gen.model, mode: gen.mode,
-      inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd,
+      inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd, credits: 0, requestType: "text",
     });
     if (draft) partial = true;
   }
   task.results = results;
   task.partialMaterials = partial && results.length > 0;
+  task.needsImageChoice = needsImageChoice;
+  task.creditShortfall = creditShortfall;
   task.reviseNote = undefined;
   recompute(store, task);
   store.save();
   return task;
+}
+
+// ── 이미지 진행 방식 선택 (designer 선택 시 디자이너 없으면 채용) ──
+export function setImageChoice(store: AlphaStore, taskId: Id, choice: ImageChoice): AlphaTask | null {
+  const task = store.data.tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  if (choice === "designer" && !store.data.employees.some((e) => e.dna.genome.roleFamily === "design")) {
+    hire(store, "design", "디자이너");
+  }
+  task.imageChoice = choice;
+  recompute(store, task);
+  store.save();
+  return task;
+}
+
+// ── 크레딧 충전 (Placeholder — 실결제 없음) ──
+export function topUpCredits(store: AlphaStore, amount = TOPUP_AMOUNT): number {
+  store.data.credits += amount;
+  store.data.tasks.forEach((t) => recompute(store, t));
+  store.save();
+  return store.data.credits;
 }
 
 /** "이대로 진행하기"(별칭) — executeTask가 best-effort로 생성하므로 동일 동작. */
@@ -395,6 +489,9 @@ export function dashboard(store: AlphaStore) {
     categories: MATERIAL_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c] })),
     // HQ 전문 직원 카탈로그(직군↔직원 분리, 계약 옵션·가격 Placeholder, HQ 판단)
     hqEmployees: hqCatalog(),
+    // 크레딧 잔액(Placeholder) + 1회 이미지 생성 비용
+    credits: store.data.credits,
+    imageCreditCost: IMAGE_CREDIT_COST,
   };
 }
 
@@ -421,6 +518,7 @@ export function resultsTab(tasks: AlphaTask[]) {
     .flatMap((t) => t.results.map((r) => ({
       taskId: t.id, title: t.title, by: r.by, outputType: r.outputType,
       requestedOutputType: r.requestedOutputType, state: r.state,
+      requestType: r.requestType, creditsUsed: r.creditsUsed ?? 0,
       approved: t.status === "approved", content: r.content,
       canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
     })));
@@ -452,12 +550,20 @@ export function taskView(store: AlphaStore, t: AlphaTask) {
       notRecommended: r.notRecommended.map((e) => ({ id: e.id, title: e.title })),
     };
   });
+  // 이미지 요청 수익화 흐름 상태
+  const isVisualTask = t.outputTypes.some(isVisual);
+  const credits = store.data.credits;
+  const imageChoiceNeeded = isVisualTask && !t.imageChoice;
+  const creditShortfall = isVisualTask && t.imageChoice === "credit" && credits < IMAGE_CREDIT_COST;
+  const designerHired = store.data.employees.some((e) => e.dna.genome.roleFamily === "design");
   return {
     id: t.id, title: t.title, status: t.status, statusLabel: STATUS_LABEL[t.status],
     assignees: uniq(t.requiredRoles).map(roleTitle),
     neededMaterials: t.missingInfo.map((k) => ({ key: k, label: infoLabel(k) })),
     reusedMaterials,
     suitability,
+    isVisualTask, imageChoice: t.imageChoice ?? null, imageChoiceNeeded,
+    creditShortfall, credits, imageCreditCost: IMAGE_CREDIT_COST, designerHired,
     recommendedHires: t.missingRoles.map((r) => ({ roleFamily: r, title: roleTitle(r) })),
     provided: t.materials.map((m) => ({ label: infoLabel(m.infoKey), kind: m.kind, value: m.value })),
     results: t.results,

@@ -4,11 +4,11 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import type { Material, RoleFamily } from "../../../packages/shared-types/src/index.ts";
-import type { MaterialCategory } from "./store.ts";
+import type { ImageChoice, MaterialCategory } from "./store.ts";
 import { AlphaStore } from "./store.ts";
 import {
   addVaultMaterials, ALPHA_PASS, approveTask, dashboard, editVaultItem, executeTask, hideVaultItem, hire, hideTask, login,
-  type MaterialItem, provideMaterials, proceedWithPartial, registerTask, reviseTask, taskView,
+  type MaterialItem, provideMaterials, proceedWithPartial, registerTask, reviseTask, setImageChoice, taskView, topUpCredits,
 } from "./app.ts";
 
 // 요청 body의 items[] → MaterialItem[] (텍스트/URL/파일/이미지 다중)
@@ -105,6 +105,15 @@ async function handle(url: string, req: import("node:http").IncomingMessage, res
       case "/api/vault/hide": {   // 자료 카드 숨김(삭제 아님)
         const ok = hideVaultItem(store, String(b.id ?? ""));
         send(res, ok ? 200 : 404, { ok, dashboard: dashboard(store) }); return;
+      }
+      case "/api/image-choice": {   // 이미지 진행 방식 선택 (designer/credit/brief)
+        const t = setImageChoice(store, String(b.taskId ?? ""), (b.choice as ImageChoice) ?? "brief");
+        if (!t) { send(res, 404, { error: "no task" }); return; }
+        reply({ task: taskView(store, t) }); return;
+      }
+      case "/api/credits/topup": {   // 크레딧 충전 (Placeholder — 실결제 없음)
+        const credits = topUpCredits(store);
+        reply({ credits }); return;
       }
       case "/api/hire": { hire(store, b.roleFamily as RoleFamily, b.persona as string | undefined); reply(); return; }
       case "/api/hide": {   // 카드 숨기기(삭제 아님)

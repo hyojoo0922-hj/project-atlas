@@ -122,40 +122,66 @@ const DATA_PATH = process.env.ATLAS_DATA ?? `${process.cwd()}/.atlas-data/alpha.
 const isCurrentTask = (t: unknown): boolean =>
   !!t && typeof (t as AlphaTask).title === "string" && Array.isArray((t as AlphaTask).requiredRoles);
 
+/** 임의 저장소가 돌려준 데이터를 현재 스키마로 안전 정규화(비호환/손상 → 새 부트스트랩). */
+export function normalizeData(raw: Partial<AlphaData> | null | undefined): AlphaData {
+  if (!raw) return bootstrap();
+  const tasksOk = !raw.tasks || (Array.isArray(raw.tasks) && raw.tasks.every(isCurrentTask));
+  // v2→v3는 가산적(vault 추가)이라 forward-merge로 보존. 그 이전/손상만 재부트스트랩.
+  const versionOk = raw.version === undefined || raw.version === 2 || raw.version === DATA_VERSION;
+  const ok = raw.company && Array.isArray(raw.employees) && Array.isArray(raw.companyInfo) && tasksOk && versionOk;
+  if (!ok) return bootstrap();
+  return { ...bootstrap(), ...(raw as AlphaData), version: DATA_VERSION };
+}
+
 /** 저장된 데이터를 현재 스키마로 안전 로드. 비호환이면 백업 후 새로 시작(검은 화면 방지). */
 function loadOrBootstrap(path: string): AlphaData {
   if (!existsSync(path)) return bootstrap();
   let raw: Partial<AlphaData> | null = null;
   try { raw = JSON.parse(readFileSync(path, "utf8")); } catch { raw = null; }
   const tasksOk = !raw?.tasks || (Array.isArray(raw.tasks) && raw.tasks.every(isCurrentTask));
-  // v2→v3는 가산적(vault 추가)이라 forward-merge로 보존. 그 이전/손상만 재부트스트랩.
   const versionOk = raw?.version === undefined || raw.version === 2 || raw.version === DATA_VERSION;
   const ok = raw && raw.company && Array.isArray(raw.employees) && Array.isArray(raw.companyInfo) && tasksOk && versionOk;
   if (!ok) {
-    // 구버전/손상 데이터 → 백업 후 새로 부트스트랩
     try { writeFileSync(`${path}.bak`, readFileSync(path)); } catch { /* noop */ }
     return bootstrap();
   }
   return { ...bootstrap(), ...(raw as AlphaData), version: DATA_VERSION };
 }
 
+/** 영속 어댑터 — 로컬 JSON / Supabase 등 교체 가능. save는 동기(JSON) 또는 fire-and-forget(원격). */
+export interface Persister {
+  load(): AlphaData | null | Promise<AlphaData | null>;
+  save(data: AlphaData): void | Promise<void>;
+}
+
+/** 로컬 JSON 파일 어댑터(기본) — 동기 로드/저장. */
+export function jsonPersister(path = DATA_PATH): Persister {
+  return {
+    load: () => loadOrBootstrap(path),
+    save: (data) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, JSON.stringify(data, null, 2)); },
+  };
+}
+
 export class AlphaStore {
   data: AlphaData;
-  private path: string;
+  private persister: Persister;
 
-  constructor(path = DATA_PATH) {
-    this.path = path;
-    this.data = loadOrBootstrap(path);
+  // 기본: 로컬 JSON 경로(동기). 원격(Supabase 등)은 미리 로드한 data + persister 주입.
+  constructor(arg: string | { data: AlphaData; persister: Persister } = DATA_PATH) {
+    if (typeof arg === "string") {
+      this.persister = jsonPersister(arg);
+      this.data = loadOrBootstrap(arg);
+    } else {
+      this.persister = arg.persister;
+      this.data = arg.data;
+    }
     this.save();
   }
 
   /** 영속 seq 기반 id (재시작 후 충돌 방지) */
   nextId(prefix: string): Id { this.data.seq += 1; return `${prefix}-${this.data.seq}`; }
 
-  save(): void {
-    mkdirSync(dirname(this.path), { recursive: true });
-    writeFileSync(this.path, JSON.stringify(this.data, null, 2));
-  }
+  save(): void { void this.persister.save(this.data); }   // 동기(JSON) 또는 fire-and-forget(원격)
 
   presentRoles(): RoleFamily[] {
     return [...new Set(this.data.employees.map((e) => e.dna.genome.roleFamily))];

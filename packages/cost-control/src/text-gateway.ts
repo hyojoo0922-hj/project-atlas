@@ -29,6 +29,8 @@ export const isRealTextType = (t: OutputType): boolean => REAL_TEXT_TYPES.has(t)
 
 // Cost First: 가장 저렴한 모델. (claude-api: Haiku 4.5 = $1/$5 per MTok)
 const MODEL = process.env.ATLAS_LLM_MODEL ?? "claude-haiku-4-5";
+// Messages 엔드포인트. 기본은 실제 Anthropic. 호환 프록시/검증용으로만 override(ATLAS_LLM_URL).
+const API_URL = process.env.ATLAS_LLM_URL ?? "https://api.anthropic.com/v1/messages";
 const PRICE: Record<string, { in: number; out: number }> = {
   "claude-haiku-4-5": { in: 1, out: 5 },     // $/MTok
   "claude-sonnet-4-6": { in: 3, out: 15 },
@@ -55,7 +57,7 @@ export const anthropicGenerator: TextGenerator = async (r) => {
   if (!key) return mockGenerator(r);                 // 키 없음 → 안전 폴백
   if (!isRealTextType(r.outputType)) return mockGenerator(r); // allowlist 밖 → 실제 호출 금지
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(API_URL, {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({

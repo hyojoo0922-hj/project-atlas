@@ -122,6 +122,10 @@ function resultMeta(r){
   return s;
 }
 function qclass(label){return ({"Excellent":"p-ok","Good":"p-ready","Draft":"p-wait","Needs Revision":"p-hire"})[label]||"p-wait";}
+function templateLine(r){
+  if(!r.templateSections||!r.templateSections.length) return "";
+  return `<div class="small mt"><span class="b">구성</span> ${r.templateSections.map(s=>`<span class="tag">${esc(s)}</span>`).join("")}</div>`;
+}
 function qualityHint(r){
   return r.recommendRevision?`<div class="small" style="color:#9a315b">HQ Quality: Draft 이하 — 수정 요청을 권장합니다.</div>`:"";
 }
@@ -343,6 +347,7 @@ function resultCard(r){
       <div class="row" style="gap:6px">${r.approved?'<span class="pill p-ok">승인됨</span>':'<span class="pill p-done">전달 완료</span>'}<button class="x" title="숨기기" onclick="hideCard('${r.taskId}')">✕</button></div></div>
     <div class="muted small mt">${resultMeta(r)}</div>
     ${r.partialMaterials?'<div class="small" style="color:#e8c772">일부 자료가 부족한 상태에서 초안으로 작성되었습니다.</div>':''}
+    ${templateLine(r)}
     ${qualityHint(r)}
     <div class="result">${esc(r.content)}</div>
     ${r.canRevise?`<div class="row mt"><button class="btn2 sm" onclick="revise('${r.taskId}')">수정 요청</button></div>`:''}</div>`;
@@ -433,7 +438,7 @@ function taskCard(t){
     inner+=`<div class="mt b small">결과물</div>`;
     if(t.partialMaterials) inner+=`<div class="small" style="color:#e8c772">일부 자료가 부족한 상태에서 초안으로 작성되었습니다. 자료를 더 제공하면 다시 실행해 품질을 높일 수 있습니다.</div>`;
     t.results.forEach(r=>{
-      inner+=`<div class="result"><div class="b small">${resultMeta(r)}</div>${qualityHint(r)}${esc(r.content)}</div>`;
+      inner+=`<div class="result"><div class="b small">${resultMeta(r)}</div>${templateLine(r)}${qualityHint(r)}${esc(r.content)}</div>`;
     });
     if(t.status!=="approved") inner+=`<div class="row mt"><button class="btn" onclick="approve('${t.id}')">승인하기</button><button class="btn2" onclick="revise('${t.id}')">수정 요청</button></div>`;
   }

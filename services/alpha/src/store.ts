@@ -43,6 +43,7 @@ export interface TaskResult {
   qualityScore?: number;       // 0..100 Placeholder
   qualityCategory?: string;    // writer | designer | marketing | cs | report
   recommendRevision?: boolean; // Draft 이하 → 대표에게 수정 요청 권장
+  templateSections?: string[]; // 적용된 업무 유형 템플릿의 섹션 구성
 }
 
 export interface AlphaTask {

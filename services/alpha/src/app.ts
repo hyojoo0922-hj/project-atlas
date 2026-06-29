@@ -7,6 +7,7 @@ import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-co
 import { bySpecialization, recommendForOutput } from "../../../packages/hq-catalog/src/hq-catalog.ts";
 import { getOutputStandard, renderStandardForPrompt } from "../../../packages/hq-catalog/src/output-standard.ts";
 import { evaluateQuality, qualityCategoryForOutput } from "../../../packages/hq-catalog/src/output-quality.ts";
+import { getOutputTemplate, renderMockFromTemplate, renderTemplateForPrompt, templateSectionTitles } from "../../../packages/hq-catalog/src/output-template.ts";
 import { AlphaStore, type AlphaTask, type ImageChoice, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
@@ -284,9 +285,11 @@ const designerPersona = (store: AlphaStore): string | undefined =>
 const writerPersona = (store: AlphaStore): string | undefined =>
   store.data.employees.find((e) => e.dna.genome.roleFamily === "content")?.dna.phenotype.persona;
 
-/** HQ Output Quality(Placeholder) 평가 결과를 TaskResult에 부착. pending은 평가 대상 아님. */
+/** HQ Output Quality(Placeholder) 평가 결과를 TaskResult에 부착. 템플릿 섹션 누락도 감지. pending 제외. */
 function attachQuality(r: TaskResult): TaskResult {
-  const q = evaluateQuality(r.content, qualityCategoryForOutput(r.outputType), r.state);
+  const sections = templateSectionTitles(r.outputType);
+  r.templateSections = sections.length ? sections : undefined;
+  const q = evaluateQuality(r.content, qualityCategoryForOutput(r.outputType), r.state, sections);
   if (q) { r.qualityLabel = q.label; r.qualityScore = q.score; r.qualityCategory = q.category; r.recommendRevision = q.recommendRevision; }
   return r;
 }
@@ -334,7 +337,7 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
       // brief / designer → image_brief (designer 선택 시 디자이너 작성 = fallback 기획안)
       const designer = designerPersona(store);
       const by = choice === "designer" && designer ? designer : (writerPersona(store) ?? "대표 비서");
-      const fallbackText = mockContent("image_brief", store.data.company.name, by);
+      const fallbackText = mockContent("image_brief", store.data.company.name, by, task.title);
       const gen = await textGenerator({
         outputType: "image_brief", system: buildSystem(store, by, true),
         prompt: buildPrompt(store, task, "image_brief", true), fallbackText, draft: true,
@@ -352,7 +355,7 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
     // ── 텍스트형 ──
     const by = p.executor ?? roleTitle(p.roleFamily);
     const draft = p.mode === "draft";
-    const fallbackText = mockContent(p.deliveredType, store.data.company.name, by);
+    const fallbackText = mockContent(p.deliveredType, store.data.company.name, by, task.title);
     const gen = await textGenerator({
       outputType: p.deliveredType,
       system: buildSystem(store, by, draft),
@@ -416,13 +419,15 @@ function buildSystem(store: AlphaStore, by: string, draft: boolean): string {
 function buildPrompt(store: AlphaStore, task: AlphaTask, type: OutputType, draft: boolean): string {
   const known = store.data.companyInfo.map(infoLabel).join(", ") || "없음";
   const base = `요청: "${task.title}"\n결과물 유형: ${type}\n보유 자료: ${known}`;
-  // HQ Output Standard 주입 — 직원은 자유롭게 제출하지 않고 표준에 맞춰 작성
+  // HQ Output Standard + 업무 유형별 템플릿 주입 — 직원은 표준·템플릿에 맞춘 완성형으로 제출
   const std = getOutputStandard(type);
   const stdBlock = std ? `\n\n${renderStandardForPrompt(std)}` : "";
+  const tpl = getOutputTemplate(type);
+  const tplBlock = tpl ? `\n\n${renderTemplateForPrompt(tpl)}` : "";
   if (type === "image_brief") {
-    return base + `\n실제 이미지는 만들지 말고, 디자이너가 쓸 연출 기획안/촬영 가이드/이미지 프롬프트 초안/필요 자료 체크리스트를 작성하세요. 맨 앞에 "실제 이미지는 아직 생성하지 않았습니다"를 명시하세요.` + stdBlock;
+    return base + `\n실제 이미지는 만들지 말고, 디자이너가 쓸 상세 기획안을 작성하세요. 맨 앞에 "실제 이미지는 아직 생성하지 않았습니다"를 명시하세요.` + stdBlock + tplBlock;
   }
-  return base + (draft ? `\n자료가 일부 부족하므로 초안 수준으로 작성하세요.` : ``) + stdBlock;
+  return base + (draft ? `\n자료가 일부 부족하므로 초안 수준으로 작성하세요.` : ``) + stdBlock + tplBlock;
 }
 
 export function approveTask(store: AlphaStore, taskId: Id, feedback?: AlphaTask["feedback"]): boolean {
@@ -533,6 +538,7 @@ export function resultsTab(tasks: AlphaTask[]) {
       requestedOutputType: r.requestedOutputType, state: r.state,
       requestType: r.requestType, creditsUsed: r.creditsUsed ?? 0, standardLabel: r.standardLabel,
       qualityLabel: r.qualityLabel, qualityScore: r.qualityScore, recommendRevision: !!r.recommendRevision,
+      templateSections: r.templateSections,
       approved: t.status === "approved", content: r.content,
       canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
     })));
@@ -613,28 +619,12 @@ function reasonFor(rf: RoleFamily, openTasks: AlphaTask[]): string {
   return t ? `"${t.title}" 업무에 ${roleTitle(rf)}가 필요합니다.` : `${roleTitle(rf)}가 있으면 더 많은 업무를 처리할 수 있습니다.`;
 }
 
-function mockContent(type: OutputType, company: string, by: string): string {
-  switch (type) {
-    case "ad_copy": return `[광고 카피 초안 · ${by}]\n${company} 신메뉴 출시! 오늘만의 특별한 한 잔 — 따뜻한 브랜드 말투로 작성된 홍보 문구입니다. (예시 placeholder)`;
-    case "social_post": return `[SNS 포스트 초안 · ${by}]\n오늘의 신메뉴 ✨ #${company.replace(/\s/g, "")} #신메뉴 (예시 placeholder)`;
-    case "text": return `[텍스트 초안 · ${by}]\n${company} 관련 콘텐츠 초안입니다. (예시 placeholder)`;
-    case "report": return `[리포트 초안 · ${by}]\n${company} 요약 리포트 (예시 placeholder)`;
-    case "customer_reply": return `[고객 응대 초안 · ${by}]\n안녕하세요, ${company}입니다. 문의 주셔서 감사합니다. (예시 placeholder)`;
-    case "image_brief": return [
-      `📋 이미지 제작 기획안 · ${by}`,
-      `⚠️ 실제 이미지는 아직 생성하지 않았습니다. 대신 Designer Employee가 사용할 수 있는 연출 기획안/촬영 가이드/프롬프트 초안입니다.`,
-      ``,
-      `1) 연출 기획안: ${company} 신메뉴를 따뜻한 분위기로 연출 (예시 placeholder)`,
-      `2) 촬영 가이드: 자연광·45도 앵글·우드톤 배경 권장 (예시 placeholder)`,
-      `3) 이미지 프롬프트 초안: "${company} 신메뉴, 따뜻한 조명, 미니멀, 고해상도" (예시 placeholder)`,
-      `4) 디자이너 요청서: 위 기획안 기반 1차 시안 요청`,
-      `5) 필요 자료 체크리스트: 로고 · 브랜드 컬러 · 제품 사진 · 디자인 레퍼런스`,
-      ``,
-      `※ 자료가 부족하면 실제 제작 품질은 제한될 수 있습니다. 자료를 더 제공하면 더 정확한 기획안이 됩니다.`,
-    ].join("\n");
-    case "image": case "video": return `🎨 ${type === "image" ? "이미지" : "영상"} 제작 기획안 (실제 생성 아님) · ${by}`;
-    default: return `[초안 · ${by}] (예시 placeholder)`;
-  }
+// mock 모드 결과물 — 업무 유형별 템플릿으로 완성형 생성(placeholder 문구 없음).
+function mockContent(type: OutputType, company: string, by: string, title: string): string {
+  const tpl = getOutputTemplate(type);
+  if (tpl) return renderMockFromTemplate(tpl, { company, by, title });
+  if (type === "image" || type === "video") return `【${type === "image" ? "이미지" : "영상"} 제작 기획안 · ${by}】 — ${title}\n실제 ${type === "image" ? "이미지" : "영상"}는 아직 생성하지 않았습니다. 상세 기획안으로 진행합니다.`;
+  return `【결과물 · ${by}】 — ${title}\n${company} 업무 결과물입니다.`;
 }
 
 const uniq = <T>(a: T[]): T[] => [...new Set(a)];

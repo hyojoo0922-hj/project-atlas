@@ -601,6 +601,60 @@ test("Output Quality + Satisfaction: 품질과 대표 만족도가 함께 보존
   assert.ok(task.results[0]!.qualityLabel);                // HQ 품질도 함께 보존
 });
 
+test("템플릿: mock 결과물에 placeholder 문구가 없고 템플릿 구조(섹션)가 나온다", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");        // social_post
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  const done = (await executeTask(s, t.id))!;
+  const r = done.results[0]!;
+  assert.ok(!/placeholder|예시\s*placeholder/i.test(r.content));   // placeholder 제거
+  assert.ok(r.content.includes("후킹") && r.content.includes("CTA"));// 템플릿 섹션 구조
+  assert.deepEqual(r.templateSections, ["후킹", "본문", "해시태그", "CTA"]);
+});
+
+test("템플릿: image_brief mock은 10개 이상 섹션의 상세 기획안", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "brief");
+  const done = (await executeTask(s, t.id))!;
+  const r = done.results[0]!;
+  assert.ok((r.templateSections ?? []).length >= 10);
+  assert.ok(r.content.includes("실제 이미지는 아직 생성하지 않았습니다"));
+  assert.ok(r.content.includes("이미지 생성 프롬프트 초안"));
+  assert.ok(!/placeholder|예시\s*placeholder/i.test(r.content));
+});
+
+test("템플릿: 실제 AI ON 경로에도 템플릿이 프롬프트에 강하게 주입된다", async () => {
+  const s = tmp();
+  let prompt = "";
+  setTextGenerator(async (r) => { prompt = r.prompt; return { text: "x", model: "m", inputTokens: 1, outputTokens: 1, costUsd: 0.001, mode: "ai" }; });
+  try {
+    const t = registerTask(s, "신메뉴 소개 글 써줘");
+    provideMaterial(s, t.id, "brand-voice", "text", "v");
+    provideMaterial(s, t.id, "channel", "text", "instagram");
+    await executeTask(s, t.id);
+    assert.ok(prompt.includes("필수 결과물 템플릿"));
+    assert.ok(prompt.includes("후킹"));
+    assert.ok(/placeholder/i.test(prompt) || prompt.includes("미완성"));  // 금지 지시 포함
+  } finally { setTextGenerator(makeTextGenerator()); }
+});
+
+test("품질: 템플릿 섹션 누락/ placeholder 잔존 결과물은 Needs Revision", async () => {
+  const s = tmp();
+  // AI가 템플릿을 어겨 placeholder 문구를 낸 상황을 주입
+  setTextGenerator(async () => ({ text: "대충 작성 (예시 placeholder)", model: "m", inputTokens: 1, outputTokens: 1, costUsd: 0.001, mode: "ai" }));
+  try {
+    const t = registerTask(s, "신메뉴 소개 글 써줘");
+    provideMaterial(s, t.id, "brand-voice", "text", "v");
+    provideMaterial(s, t.id, "channel", "text", "instagram");
+    const done = (await executeTask(s, t.id))!;
+    const r = done.results[0]!;
+    assert.equal(r.qualityLabel, "Needs Revision");   // 섹션 누락 + placeholder → 최하
+    assert.equal(r.recommendRevision, true);
+  } finally { setTextGenerator(makeTextGenerator()); }
+});
+
 test("persistence: 재시작 후 업무·자료 유지", () => {
   const p = `${process.env.TMPDIR ?? "/tmp"}/atlas-fix-persist-${Math.round(performance.now() * 1000)}.json`;
   try { rmSync(p); } catch { /* noop */ }

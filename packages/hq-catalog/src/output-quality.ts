@@ -35,25 +35,41 @@ export interface QualityResult {
   score: number;            // 0..100 (Placeholder)
   recommendRevision: boolean; // Draft 이하 → 대표에게 수정 요청 권장
   must: string[];
+  missingSections: string[];  // 템플릿 섹션 누락(품질 감지)
+  hasPlaceholder: boolean;    // 미완성 문구(placeholder/예시) 잔존
 }
 
 const labelFromScore = (score: number): QualityLabel =>
   score >= 90 ? "Excellent" : score >= 75 ? "Good" : score >= 50 ? "Draft" : "Needs Revision";
 
-/** Placeholder 품질 평가 — 상태(final/draft)+분량 기반. 실제 AI 평가 아님.
- *  state "pending"(이미지 생성 대기 등)은 평가 대상 아님 → undefined. */
-export function evaluateQuality(content: string, category: QualityCategory, state: "final" | "draft" | "pending"): QualityResult | undefined {
+const PLACEHOLDER_RE = /placeholder|예시\s*placeholder|\bTODO\b/i;
+
+/** Placeholder 품질 평가 — 상태(final/draft)+분량+템플릿 섹션 충족 기반. 실제 AI 평가 아님.
+ *  state "pending"(이미지 생성 대기 등)은 평가 대상 아님 → undefined.
+ *  expectedSections: 템플릿 섹션 제목들 — 결과물에 누락되면 감점/Needs Revision. */
+export function evaluateQuality(
+  content: string, category: QualityCategory, state: "final" | "draft" | "pending", expectedSections: string[] = [],
+): QualityResult | undefined {
   if (state === "pending") return undefined;
-  const len = (content ?? "").trim().length;
+  const text = content ?? "", len = text.trim().length;
+  const missingSections = expectedSections.filter((s) => !text.includes(s));
+  const hasPlaceholder = PLACEHOLDER_RE.test(text);
+
   let score: number;
   if (len < 15) score = 42;                       // 사실상 빈 결과 → Needs Revision
   else if (state === "final") score = len > 200 ? 92 : 82;  // 충분 자료 최종본
   else score = 66;                                // 초안
+  score -= missingSections.length * 10;           // 템플릿 섹션 누락 감점
+  if (hasPlaceholder) score = Math.min(score, 45); // 미완성 문구 잔존 → Needs Revision 수준
+  // 절반 이상 섹션 누락이면 Needs Revision 강제
+  if (expectedSections.length > 0 && missingSections.length * 2 >= expectedSections.length) score = Math.min(score, 45);
+  score = Math.max(0, Math.min(100, score));
+
   const label = labelFromScore(score);
   const std = QUALITY_STANDARDS[category];
   return {
     category, categoryLabel: std.label, label, score,
     recommendRevision: label === "Draft" || label === "Needs Revision",
-    must: std.must,
+    must: std.must, missingSections, hasPlaceholder,
   };
 }

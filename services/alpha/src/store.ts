@@ -37,6 +37,7 @@ export interface TaskResult {
   content: string;        // mock/placeholder 텍스트
   requestType?: RequestType;   // 결과물 요청 유형
   creditsUsed?: number;        // 이 결과물에 사용된 크레딧(이미지 크레딧 경로)
+  standardLabel?: string;      // 적용된 HQ Output Standard 라벨(직원 자유 제출 아님)
 }
 
 export interface AlphaTask {

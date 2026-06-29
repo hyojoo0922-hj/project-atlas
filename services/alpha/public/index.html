@@ -116,6 +116,7 @@ function resultMeta(r){
   let s = `${outLabel(r.outputType)} · ${st} · ${esc(r.by)}`;
   if(alt) s+=` <span class="pill p-wait">실제 ${esc(r.requestedOutputType)} 아님</span>`;
   if(r.requestType) s+=` <span class="pill p-done">${esc(reqTypeLabel(r.requestType))}</span>`;
+  if(r.standardLabel) s+=` <span class="pill p-ready">표준: ${esc(r.standardLabel)}</span>`;
   if(r.creditsUsed) s+=` <span class="pill p-wait">크레딧 ${r.creditsUsed}</span>`;
   return s;
 }

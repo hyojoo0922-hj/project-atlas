@@ -5,6 +5,7 @@ import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from ".
 import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
 import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 import { bySpecialization, recommendForOutput } from "../../../packages/hq-catalog/src/hq-catalog.ts";
+import { getOutputStandard, renderStandardForPrompt } from "../../../packages/hq-catalog/src/output-standard.ts";
 import { AlphaStore, type AlphaTask, type ImageChoice, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
@@ -331,7 +332,7 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
         prompt: buildPrompt(store, task, "image_brief", true), fallbackText, draft: true,
       });
       const requestType = choice === "designer" ? "image_designer_brief" : "image_brief";
-      results.push({ outputType: "image_brief", requestedOutputType: p.outputType, by, state: "draft", requestType, content: gen.text });
+      results.push({ outputType: "image_brief", requestedOutputType: p.outputType, by, state: "draft", requestType, content: gen.text, standardLabel: getOutputStandard("image_brief")?.label });
       store.data.usage.push({
         taskId: task.id, outputType: "image_brief", model: gen.model, mode: gen.mode,
         inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd, credits: 0, requestType,
@@ -354,6 +355,7 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
       outputType: p.deliveredType,
       requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
       by, state: p.mode, requestType: "text", content: gen.text,
+      standardLabel: getOutputStandard(p.deliveredType)?.label,
     });
     store.data.usage.push({
       taskId: task.id, outputType: p.deliveredType, model: gen.model, mode: gen.mode,
@@ -406,10 +408,13 @@ function buildSystem(store: AlphaStore, by: string, draft: boolean): string {
 function buildPrompt(store: AlphaStore, task: AlphaTask, type: OutputType, draft: boolean): string {
   const known = store.data.companyInfo.map(infoLabel).join(", ") || "없음";
   const base = `요청: "${task.title}"\n결과물 유형: ${type}\n보유 자료: ${known}`;
+  // HQ Output Standard 주입 — 직원은 자유롭게 제출하지 않고 표준에 맞춰 작성
+  const std = getOutputStandard(type);
+  const stdBlock = std ? `\n\n${renderStandardForPrompt(std)}` : "";
   if (type === "image_brief") {
-    return base + `\n실제 이미지는 만들지 말고, 디자이너가 쓸 연출 기획안/촬영 가이드/이미지 프롬프트 초안/필요 자료 체크리스트를 작성하세요. 맨 앞에 "실제 이미지는 아직 생성하지 않았습니다"를 명시하세요.`;
+    return base + `\n실제 이미지는 만들지 말고, 디자이너가 쓸 연출 기획안/촬영 가이드/이미지 프롬프트 초안/필요 자료 체크리스트를 작성하세요. 맨 앞에 "실제 이미지는 아직 생성하지 않았습니다"를 명시하세요.` + stdBlock;
   }
-  return base + (draft ? `\n자료가 일부 부족하므로 초안 수준으로 작성하세요.` : ``);
+  return base + (draft ? `\n자료가 일부 부족하므로 초안 수준으로 작성하세요.` : ``) + stdBlock;
 }
 
 export function approveTask(store: AlphaStore, taskId: Id, feedback?: AlphaTask["feedback"]): boolean {
@@ -518,7 +523,7 @@ export function resultsTab(tasks: AlphaTask[]) {
     .flatMap((t) => t.results.map((r) => ({
       taskId: t.id, title: t.title, by: r.by, outputType: r.outputType,
       requestedOutputType: r.requestedOutputType, state: r.state,
-      requestType: r.requestType, creditsUsed: r.creditsUsed ?? 0,
+      requestType: r.requestType, creditsUsed: r.creditsUsed ?? 0, standardLabel: r.standardLabel,
       approved: t.status === "approved", content: r.content,
       canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
     })));

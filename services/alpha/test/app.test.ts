@@ -528,6 +528,39 @@ test("결과물 탭: 크레딧/요청 유형이 카드에 표시된다", async (
   assert.equal(card.state, "pending");
 });
 
+test("Output Standard: 결과물에 적용 표준(standardLabel) 기록 + 프롬프트에 표준 주입", async () => {
+  const s = tmp();
+  let capturedPrompt = "";
+  setTextGenerator(async (r) => {
+    capturedPrompt = r.prompt;
+    return { text: "결과", model: "claude-haiku-4-5", inputTokens: 10, outputTokens: 5, costUsd: 0.0001, mode: "ai" };
+  });
+  try {
+    const t = registerTask(s, "신메뉴 소개 글 써줘");          // social_post
+    provideMaterial(s, t.id, "brand-voice", "text", "v");
+    provideMaterial(s, t.id, "channel", "text", "instagram");
+    const done = (await executeTask(s, t.id))!;
+    assert.equal(done.results[0]!.standardLabel, "SNS 포스트");  // 적용 표준 기록
+    assert.ok(capturedPrompt.includes("HQ Output Standard"));    // 표준 프롬프트 주입
+    assert.ok(capturedPrompt.includes("해시태그 3~5개"));        // 필수 구성요소 주입
+  } finally {
+    setTextGenerator(makeTextGenerator());
+  }
+});
+
+test("Output Standard: 이미지 기획안도 표준(이미지 제작 기획안) 기록", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  setImageChoice(s, t.id, "brief");
+  const done = (await executeTask(s, t.id))!;
+  const res = done.results[0]!;
+  assert.equal(res.standardLabel, "이미지 제작 기획안");
+  // 결과물 탭에도 표준 라벨 노출
+  approveTask(s, done.id, { overall: 5 });
+  const card = dashboard(s).deliverables.find((x) => x.taskId === done.id)!;
+  assert.equal(card.standardLabel, "이미지 제작 기획안");
+});
+
 test("persistence: 재시작 후 업무·자료 유지", () => {
   const p = `${process.env.TMPDIR ?? "/tmp"}/atlas-fix-persist-${Math.round(performance.now() * 1000)}.json`;
   try { rmSync(p); } catch { /* noop */ }

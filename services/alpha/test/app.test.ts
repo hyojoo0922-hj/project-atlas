@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
-  ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
-  proceedWithPartial, provideMaterial, registerTask, reviseTask, setTextGenerator, taskView,
+  addVaultMaterial, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
+  proceedWithPartial, provideMaterial, registerTask, reviseTask, setTextGenerator, taskView, vaultView,
 } from "../src/app.ts";
 import { makeTextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 
@@ -252,6 +252,67 @@ test("커스텀 생성기 주입: 실제 텍스트 결과물이 결과/결과물
   } finally {
     setTextGenerator(makeTextGenerator());                     // 기본 생성기 복원
   }
+});
+
+test("Vault: 업무 중 제공한 자료가 Company Knowledge Vault에 저장된다(출처·카테고리·연결직원·생성일)", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");     // social_post: brand-voice + channel
+  provideMaterial(s, t.id, "brand-voice", "text", "따뜻하고 친근하게");
+  assert.equal(s.data.vault.length, 1);
+  const v = s.data.vault[0]!;
+  assert.equal(v.infoKey, "brand-voice");
+  assert.equal(v.category, "brand");            // infoKey→카테고리 역추론
+  assert.equal(v.sourceTaskId, t.id);           // 출처 업무 기록
+  assert.equal(v.byRole, "content");            // 연결 직원 직군
+  assert.ok(v.createdAt && v.createdAt.length >= 10); // 생성일
+  assert.ok(s.data.companyInfo.includes("brand-voice")); // companyInfo 동기화
+});
+
+test("Vault: 새 업무에서 이미 보유한 자료는 다시 요청하지 않고 '기존 자료 사용' 표시", () => {
+  const s = tmp();
+  const t1 = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t1.id, "brand-voice", "text", "따뜻하게");
+  provideMaterial(s, t1.id, "channel", "text", "instagram");
+  // 새 업무 등록 — 같은 자료(brand-voice, channel)를 다시 묻지 않아야 함
+  const t2 = registerTask(s, "신상품 소개 글 써줘");      // social_post 동일 요구
+  const v2 = taskView(s, t2);
+  assert.ok(!v2.neededMaterials.some((m) => m.key === "brand-voice")); // 재요청 안 함
+  assert.ok(!v2.neededMaterials.some((m) => m.key === "channel"));
+  const reused = v2.reusedMaterials.map((m) => m.key);
+  assert.ok(reused.includes("brand-voice") && reused.includes("channel")); // 기존 자료 사용 표시
+  assert.equal(v2.status, "ready");              // 자료 충분 → 바로 실행 가능
+});
+
+test("Vault: 자료 탭에서 직접 추가(업무 무관) → Vault 저장 + companyInfo 반영", () => {
+  const s = tmp();
+  const v = addVaultMaterial(s, "brand", "text", "미니멀하고 담백한 말투");
+  assert.equal(s.data.vault.length, 1);
+  assert.equal(v.infoKey, "brand-voice");        // 카테고리→대표 infoKey
+  assert.equal(v.sourceTaskId, undefined);       // 직접 추가(출처 업무 없음)
+  assert.ok(s.data.companyInfo.includes("brand-voice"));
+  const view = vaultView(s)[0]!;
+  assert.equal(view.source, "직접 추가");
+  assert.equal(view.categoryLabel, "브랜드");
+});
+
+test("Vault: 직접 추가한 자료가 이후 새 업무에 자동 활용된다", () => {
+  const s = tmp();
+  addVaultMaterial(s, "brand", "text", "따뜻한 브랜드 말투");   // brand-voice를 미리 보유
+  const t = registerTask(s, "신메뉴 소개 글 써줘");            // social_post: brand-voice + channel
+  const v = taskView(s, t);
+  assert.ok(v.reusedMaterials.some((m) => m.key === "brand-voice")); // 자동 활용
+  assert.ok(!v.neededMaterials.some((m) => m.key === "brand-voice"));// 다시 묻지 않음
+  assert.ok(v.neededMaterials.some((m) => m.key === "channel"));     // 없는 자료만 요청
+});
+
+test("Vault: dashboard에 자료 목록과 카테고리가 노출된다", () => {
+  const s = tmp();
+  addVaultMaterial(s, "product", "url", "https://example.com/menu");
+  const d = dashboard(s);
+  assert.ok(Array.isArray(d.vault) && d.vault.length === 1);
+  assert.equal(d.vault[0]!.categoryLabel, "상품");
+  assert.equal(d.vault[0]!.kind, "url");
+  assert.equal(d.categories.length, 7);          // 7개 카테고리
 });
 
 test("persistence: 재시작 후 업무·자료 유지", () => {

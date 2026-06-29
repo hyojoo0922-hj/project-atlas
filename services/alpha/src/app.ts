@@ -4,7 +4,7 @@ import type { Id, OutputType, RoleFamily } from "../../../packages/shared-types/
 import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from "../../../packages/assistant/src/work-loop.ts";
 import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
 import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
-import { AlphaStore, type AlphaTask, type Material, type TaskResult, type TaskStatus } from "./store.ts";
+import { AlphaStore, type AlphaTask, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
 
@@ -134,17 +134,76 @@ export function taskCTA(store: AlphaStore, task: AlphaTask): { kind: "execute" |
   return { kind: "blocked", label: task.status === "needs_hire" ? "직원 채용 필요" : "자료 필요" };
 }
 
-// ── 자료 제공 (텍스트/URL/파일/이미지). Company Memory에 축적 + 업무 갱신 ──
+// ── Company Knowledge Vault (자료 인박스) 카테고리 매핑 ──
+export const CATEGORY_LABEL: Record<MaterialCategory, string> = {
+  brand: "브랜드", product: "상품", reference: "레퍼런스", liked_style: "좋아하는 스타일",
+  disliked: "싫어하는 표현", customer_faq: "고객/FAQ", etc: "기타",
+};
+export const MATERIAL_CATEGORIES = Object.keys(CATEGORY_LABEL) as MaterialCategory[];
+
+// 자료 탭 직접 추가: 카테고리 → 대표 infoKey (업무 요구사항 자동 충족용)
+const CATEGORY_TO_INFOKEY: Record<MaterialCategory, string> = {
+  brand: "brand-voice", product: "product-info", reference: "design-reference",
+  liked_style: "tone", disliked: "banned-terms", customer_faq: "faq", etc: "source",
+};
+// 업무 제공 자료: infoKey → 카테고리 (역추론)
+function categoryForInfoKey(k: string): MaterialCategory {
+  if (["brand-voice", "tone", "logo", "brand-color", "brand-assets", "channel"].includes(k)) return "brand";
+  if (["product-info", "product-image"].includes(k)) return "product";
+  if (["design-reference", "storyboard"].includes(k)) return "reference";
+  if (["target-audience", "faq"].includes(k)) return "customer_faq";
+  return "etc";
+}
+/** Vault에 자료 1건 적재 (companyInfo 동기화 포함). 업무/직접 추가 공통 경로. */
+function addToVault(store: AlphaStore, item: Omit<VaultItem, "id" | "createdAt"> & { createdAt?: string }): VaultItem {
+  const v: VaultItem = {
+    id: store.nextId("vlt"), createdAt: item.createdAt ?? new Date().toISOString(),
+    infoKey: item.infoKey, category: item.category, kind: item.kind, value: item.value,
+    note: item.note, sourceTaskId: item.sourceTaskId, byRole: item.byRole,
+  };
+  store.data.vault.push(v);
+  if (item.infoKey && !store.data.companyInfo.includes(item.infoKey)) store.data.companyInfo.push(item.infoKey);
+  return v;
+}
+
+// ── 자료 제공 (텍스트/URL/파일/이미지). Company Memory(Vault)에 축적 + 업무 갱신 ──
 export function provideMaterial(store: AlphaStore, taskId: Id, infoKey: string, kind: Material["kind"], value: string, note?: string): AlphaTask | null {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   const m: Material = { id: store.nextId("mat"), taskId, infoKey, kind, value, note };
   task.materials.push(m);
-  if (!store.data.companyInfo.includes(infoKey)) store.data.companyInfo.push(infoKey); // Brand/Company Memory
+  // Company Knowledge Vault에 기본 저장 (출처 업무·카테고리·연결 직원·생성일 기록)
+  const byRole = uniq(toSubTasks(task.outputTypes).filter((st) => st.requiredInfo.includes(infoKey)).map((st) => st.roleFamily))[0];
+  addToVault(store, { infoKey, category: categoryForInfoKey(infoKey), kind, value, note, sourceTaskId: taskId, byRole });
   recompute(store, task);
   store.data.tasks.forEach((t) => t.id !== taskId && recompute(store, t));
   store.save();
   return task;
+}
+
+// ── 자료 탭에서 직접 자료 추가 (업무와 무관) — 카테고리 선택, 이후 업무에 자동 활용 ──
+export function addVaultMaterial(
+  store: AlphaStore, category: MaterialCategory, kind: Material["kind"], value: string, note?: string, infoKey?: string,
+): VaultItem {
+  const key = (infoKey && infoKey.trim()) || CATEGORY_TO_INFOKEY[category];
+  const v = addToVault(store, { infoKey: key, category, kind, value, note });
+  store.data.tasks.forEach((t) => recompute(store, t));   // 기존 업무도 자동 활용 갱신
+  store.save();
+  return v;
+}
+
+/** 자료 탭 표시용 — Vault 항목을 라벨/카테고리/출처/날짜와 함께. 최신순. */
+export function vaultView(store: AlphaStore) {
+  const taskTitle = (id?: Id) => store.data.tasks.find((t) => t.id === id)?.title;
+  return [...store.data.vault].reverse().map((v) => ({
+    id: v.id, infoKey: v.infoKey, infoLabel: infoLabel(v.infoKey),
+    category: v.category, categoryLabel: CATEGORY_LABEL[v.category],
+    kind: v.kind, value: v.value, note: v.note,
+    source: v.sourceTaskId ? (taskTitle(v.sourceTaskId) ?? "업무") : "직접 추가",
+    fromTask: !!v.sourceTaskId,
+    byRole: v.byRole, byLabel: v.byRole ? roleTitle(v.byRole) : null,
+    createdAt: v.createdAt,
+  }));
 }
 
 // ── 직원 실행 — 결과물 생성 순간에만 AI 호출(없으면 mock). 모든 유형 best-effort ──
@@ -279,6 +338,9 @@ export function dashboard(store: AlphaStore) {
     tasks: openTasks.slice(-12).reverse().map((t) => taskView(store, t)),
     // 결과물 탭: 전달/승인 완료 결과물(숨김 제외)
     deliverables: resultsTab(visible),
+    // 자료 탭: Company Knowledge Vault 전체(최신순) + 카테고리 목록
+    vault: vaultView(store),
+    categories: MATERIAL_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c] })),
   };
 }
 
@@ -304,10 +366,19 @@ export function taskView(store: AlphaStore, t: AlphaTask) {
     t.missingRoles.forEach((r) => nextActions.push(`${roleTitle(r)} 채용하기`));
     t.missingInfo.forEach((k) => nextActions.push(`${infoLabel(k)} 자료 제공하기`));
   }
+  // 기존 자료 사용: 업무가 필요로 하는 infoKey 중 이번 업무에서 직접 제공하지 않았는데
+  // 이미 Vault(companyInfo)에 있어 자동 활용된 항목 → "기존 자료 사용"으로 표시
+  const requiredKeys = uniq(toSubTasks(t.outputTypes).flatMap((st) => st.requiredInfo));
+  const providedKeys = new Set(t.materials.map((m) => m.infoKey));
+  const have = new Set(store.data.companyInfo);
+  const reusedMaterials = requiredKeys
+    .filter((k) => have.has(k) && !providedKeys.has(k))
+    .map((k) => ({ key: k, label: infoLabel(k) }));
   return {
     id: t.id, title: t.title, status: t.status, statusLabel: STATUS_LABEL[t.status],
     assignees: uniq(t.requiredRoles).map(roleTitle),
     neededMaterials: t.missingInfo.map((k) => ({ key: k, label: infoLabel(k) })),
+    reusedMaterials,
     recommendedHires: t.missingRoles.map((r) => ({ roleFamily: r, title: roleTitle(r) })),
     provided: t.materials.map((m) => ({ label: infoLabel(m.infoKey), kind: m.kind, value: m.value })),
     results: t.results,

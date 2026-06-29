@@ -61,6 +61,24 @@ export interface UsageEntry {
   costUsd: number;
 }
 
+/** Company Knowledge Vault 카테고리 (대표가 분류하는 자료 묶음) */
+export type MaterialCategory =
+  | "brand" | "product" | "reference" | "liked_style" | "disliked" | "customer_faq" | "etc";
+
+/** Company Knowledge Vault 항목 — 업무 제공 자료 + 자료 탭 직접 추가 자료의 단일 저장소.
+ *  companyInfo(보유 infoKey 집합)와 함께 출처·카테고리·날짜·연결 직원을 보존한다. */
+export interface VaultItem {
+  id: Id;
+  infoKey: string;              // 어떤 정보 슬롯을 채우는가 (brand-voice, product-info, ...)
+  category: MaterialCategory;
+  kind: "text" | "url" | "file" | "image";
+  value: string;               // 텍스트/URL/파일명/이미지명(mock)
+  note?: string;
+  sourceTaskId?: Id;           // 업무 중 제공된 경우 그 업무 id (없으면 자료 탭 직접 추가)
+  byRole?: RoleFamily;         // 이 자료를 필요로 한(연결) 직원 직군
+  createdAt: string;           // 생성일 ISO
+}
+
 export interface AlphaData {
   version: number;
   seq: number;
@@ -68,13 +86,15 @@ export interface AlphaData {
   company: Company;
   departments: Department[];
   employees: CompanyEmployee[];
-  companyInfo: string[];        // 보유 정보 키 (Company Memory)
+  companyInfo: string[];        // 보유 정보 키 (Company Memory) — 자동 활용 판단의 단일 기준
   tasks: AlphaTask[];
   usage: UsageEntry[];          // 결과물 생성 시 AI 원가/사용량 기록
+  vault: VaultItem[];           // Company Knowledge Vault (자료 인박스)
 }
 
-/** 데이터 스키마 버전. 구버전(예: 채팅 시절 tasks)과 호환되지 않으면 새로 부트스트랩. */
-export const DATA_VERSION = 2;
+/** 데이터 스키마 버전. 구버전(예: 채팅 시절 tasks)과 호환되지 않으면 새로 부트스트랩.
+ *  v3: vault 필드 추가(가산적) — v2 데이터는 forward-merge로 보존. */
+export const DATA_VERSION = 3;
 const DATA_PATH = process.env.ATLAS_DATA ?? `${process.cwd()}/.atlas-data/alpha.json`;
 
 const isCurrentTask = (t: unknown): boolean =>
@@ -86,8 +106,9 @@ function loadOrBootstrap(path: string): AlphaData {
   let raw: Partial<AlphaData> | null = null;
   try { raw = JSON.parse(readFileSync(path, "utf8")); } catch { raw = null; }
   const tasksOk = !raw?.tasks || (Array.isArray(raw.tasks) && raw.tasks.every(isCurrentTask));
-  const ok = raw && raw.company && Array.isArray(raw.employees) && Array.isArray(raw.companyInfo) && tasksOk
-    && (raw.version === DATA_VERSION || raw.version === undefined);
+  // v2→v3는 가산적(vault 추가)이라 forward-merge로 보존. 그 이전/손상만 재부트스트랩.
+  const versionOk = raw?.version === undefined || raw.version === 2 || raw.version === DATA_VERSION;
+  const ok = raw && raw.company && Array.isArray(raw.employees) && Array.isArray(raw.companyInfo) && tasksOk && versionOk;
   if (!ok) {
     // 구버전/손상 데이터 → 백업 후 새로 부트스트랩
     try { writeFileSync(`${path}.bak`, readFileSync(path)); } catch { /* noop */ }
@@ -145,5 +166,5 @@ function bootstrap(): AlphaData {
     mkEmp(depOps, "operations", "운영 매니저", "responder"),
     mkEmp(depMkt, "content", "콘텐츠 라이터", "creator"),
   ];
-  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [], usage: [] };
+  return { version: DATA_VERSION, seq, ownerName: "효주 대표", company, departments, employees, companyInfo: [], tasks: [], usage: [], vault: [] };
 }

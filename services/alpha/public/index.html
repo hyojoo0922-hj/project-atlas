@@ -72,7 +72,8 @@
 </div>
 <script>
 let token="", DB=null, ATAB="home", TOAST="";
-const TABS=[["home","홈"],["tasks","업무"],["staff","직원"],["results","결과물"],["hire","채용"]];
+const TABS=[["home","홈"],["tasks","업무"],["vault","자료"],["results","결과물"],["staff","직원"]];
+let VFILTER="all";
 const $=(id)=>document.getElementById(id);
 const esc=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const attr=(s)=>esc(s).replace(/"/g,"&quot;");
@@ -224,6 +225,38 @@ function employeeCard(role, opts){
     <div class="small mt">${reason.filter(Boolean).map(x=>`· ${esc(x)}`).join("<br>")}</div>
     ${opts.hired?`<button class="btn2 mt" onclick="placeholder('계약 연장은 다음 Sprint에서 연결됩니다.')">연장하기</button>`:""}</div>`;
 }
+function secVault(){
+  const cats=DB.categories||[];
+  const opts=cats.map(c=>`<option value="${c.key}">${esc(c.label)}</option>`).join("");
+  const filterBtns=`<button class="tag ${VFILTER==='all'?'p-ok':''}" onclick="setVFilter('all')">전체</button>`+
+    cats.map(c=>`<button class="tag ${VFILTER===c.key?'p-ok':''}" onclick="setVFilter('${c.key}')">${esc(c.label)}</button>`).join("");
+  let h=`<h1>자료</h1><div class="muted">회사 자료를 한곳에 모읍니다. 여기 있는 자료는 다음 업무에서 자동으로 사용됩니다.</div>`;
+  // 직접 추가 폼
+  h+=`<div class="card"><div class="caption">자료 직접 추가</div>
+    <div class="row resp mt" style="gap:6px">
+      <select id="vcat">${opts}</select>
+      <input id="vval" placeholder="텍스트 또는 URL (예: 따뜻하고 친근한 말투)">
+      <input type="file" id="vfile">
+      <button class="btn" onclick="addVault()">자료 저장</button></div>
+    <div class="muted small mt">텍스트·URL·파일명·이미지명(mock)을 저장할 수 있습니다. 실제 파일 업로드는 아직 지원하지 않습니다.</div></div>`;
+  // 필터 + 검색
+  h+=`<div class="mt">${filterBtns}</div>
+    <div class="search mt"><input id="vaultSearch" placeholder="자료 검색: 내용, 카테고리, 출처" oninput="renderVaultOnly()"></div>`;
+  const list=(DB.vault||[]).filter(v=>VFILTER==='all'||v.category===VFILTER);
+  h+=`<div id="vaultList">`;
+  if(!list.length) h+=`<div class="card muted">${VFILTER==='all'?'아직 저장된 자료가 없습니다. 위에서 추가하거나, 업무 중 제공한 자료가 자동으로 모입니다.':'이 카테고리에 저장된 자료가 없습니다.'}</div>`;
+  else h+=list.map(vaultCard).join("");
+  return h+`</div>`;
+}
+function vaultCard(v){
+  const kindTag=v.kind!=="text"?`<span class="tag">${esc(v.kind)}</span>`:"";
+  const date=(v.createdAt||"").slice(0,10);
+  return `<div class="card vault-card" data-search="${attr(`${v.value} ${v.categoryLabel} ${v.infoLabel} ${v.source}`.toLowerCase())}">
+    <div class="row between top"><div><span class="pill p-done">${esc(v.categoryLabel)}</span> ${kindTag}
+      <div class="b mt">${esc(v.value)}</div>
+      <div class="muted small mt">${esc(v.infoLabel)} · 출처: ${esc(v.source)}${v.byLabel?` · ${esc(v.byLabel)}`:""} · ${esc(date)}</div></div>
+      <span class="pill ${v.fromTask?'p-ok':'p-wait'}">${v.fromTask?'업무에서 수집':'직접 추가'}</span></div></div>`;
+}
 function secResults(){
   const list=DB.deliverables||[];
   let h=`<h2>결과물</h2><div class="search"><input id="resultSearch" placeholder="결과물 검색: 업무명, 직원, 내용" oninput="renderResultsOnly()"></div><div id="resultList">`;
@@ -246,9 +279,9 @@ function renderInner(){
   if(TOAST){ h+=`<div class="toast">${esc(TOAST)} <button class="btn2 sm" onclick="setTab('results')">결과물 보기</button> <button class="x" onclick="TOAST='';render()">✕</button></div>`; }
   if(ATAB==="home")    h+=secHeader()+secHomeSummary();
   else if(ATAB==="tasks") h+=secNewTask()+secOpenTasks();
+  else if(ATAB==="vault") h+=secVault();
   else if(ATAB==="staff") h+=secEmployeeHub();
   else if(ATAB==="results") h+=secResults();
-  else if(ATAB==="hire")  h+=`<h1>채용</h1><div class="muted">현재 회사에 필요한 직원을 추천 이유와 함께 확인합니다.</div>`+secRecommendedHires()+secAllEmployees();
   $("app").innerHTML=h;
 }
 
@@ -260,6 +293,10 @@ function taskCard(t){
   // 제공 완료 자료
   if(t.provided.length){
     inner+=`<div class="mt small">제공 완료: ${t.provided.map(p=>`<span class="pill p-ok">${esc(p.label)}${p.kind!=="text"?`·${p.kind}`:""}</span>`).join(" ")}</div>`;
+  }
+  // 기존 자료 사용 (Vault에서 자동 활용 — 다시 묻지 않음)
+  if((t.reusedMaterials||[]).length){
+    inner+=`<div class="mt small">기존 자료 사용: ${t.reusedMaterials.map(p=>`<span class="pill p-done">${esc(p.label)}</span>`).join(" ")}</div>`;
   }
   // 필요 자료 (미제공 — 자료 제공 입력)
   if(t.neededMaterials.length){
@@ -310,6 +347,21 @@ async function provide(taskId,key){
 async function execute(taskId){const r=await api("/api/execute",{taskId});DB=r.dashboard;render();}
 async function proceed(taskId){const r=await api("/api/proceed",{taskId});DB=r.dashboard;render();}
 async function hire(roleFamily){const r=await api("/api/hire",{roleFamily});DB=r.dashboard;render();}
+async function addVault(){
+  const cat=($("vcat")||{}).value||"etc", fileEl=$("vfile"), txt=($("vval")||{}).value.trim();
+  let kind="text",value=txt;
+  if(fileEl&&fileEl.files&&fileEl.files[0]){const f=fileEl.files[0];value=f.name;kind=f.type.startsWith("image/")?"image":"file";}
+  else if(/^https?:\/\//.test(txt))kind="url";
+  if(!value){alert("자료를 입력하거나 파일을 선택하세요");return;}
+  const r=await api("/api/vault/add",{category:cat,kind,value});DB=r.dashboard;render();
+}
+function setVFilter(c){VFILTER=c;render();}
+function renderVaultOnly(){
+  const q=($("vaultSearch")?.value||"").toLowerCase().trim();
+  document.querySelectorAll(".vault-card").forEach(el=>{
+    el.style.display=(!q||el.dataset.search.includes(q))?"block":"none";
+  });
+}
 async function hideCard(taskId){const r=await api("/api/hide",{taskId});DB=r.dashboard;render();}
 async function approve(taskId){const r=await api("/api/approve",{taskId,overall:5});DB=r.dashboard;TOAST="결과물이 승인되었습니다. 결과물 탭에서 다시 확인할 수 있습니다.";render();}
 async function revise(taskId){const note=prompt("어떻게 수정할까요?");if(!note)return;const r=await api("/api/revise",{taskId,note});DB=r.dashboard;render();}

@@ -4,9 +4,10 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import type { Material, RoleFamily } from "../../../packages/shared-types/src/index.ts";
+import type { MaterialCategory } from "./store.ts";
 import { AlphaStore } from "./store.ts";
 import {
-  ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login, provideMaterial,
+  addVaultMaterial, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login, provideMaterial,
   proceedWithPartial, registerTask, reviseTask, taskView,
 } from "./app.ts";
 
@@ -76,6 +77,13 @@ async function handle(url: string, req: import("node:http").IncomingMessage, res
         const t = await proceedWithPartial(store, String(b.taskId ?? ""));
         if (!t) { send(res, 404, { error: "no task" }); return; }
         reply({ task: taskView(store, t) }); return;
+      }
+      case "/api/vault/add": {   // 자료 탭 직접 추가 (업무와 무관)
+        const value = String(b.value ?? "").trim();
+        if (!value) { send(res, 400, { error: "empty" }); return; }
+        addVaultMaterial(store, (b.category as MaterialCategory) ?? "etc",
+          (b.kind as Material["kind"]) ?? "text", value, b.note as string | undefined, b.infoKey as string | undefined);
+        reply(); return;
       }
       case "/api/hire": { hire(store, b.roleFamily as RoleFamily, b.persona as string | undefined); reply(); return; }
       case "/api/hide": {   // 카드 숨기기(삭제 아님)

@@ -4,6 +4,7 @@ import type { Id, OutputType, RoleFamily } from "../../../packages/shared-types/
 import { analyzeRequest, toSubTasks, planSubTask, roleTitle, infoLabel } from "../../../packages/assistant/src/work-loop.ts";
 import { getOutputScope, onboardingQuestionsFor } from "../../../packages/quality/src/quality.ts";
 import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
+import { bySpecialization, recommendForOutput } from "../../../packages/hq-catalog/src/hq-catalog.ts";
 import { AlphaStore, type AlphaTask, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
@@ -341,7 +342,24 @@ export function dashboard(store: AlphaStore) {
     // 자료 탭: Company Knowledge Vault 전체(최신순) + 카테고리 목록
     vault: vaultView(store),
     categories: MATERIAL_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c] })),
+    // HQ 전문 직원 카탈로그(직군↔직원 분리, 계약 옵션·가격 Placeholder, HQ 판단)
+    hqEmployees: hqCatalog(),
   };
+}
+
+/** HQ 전문 직원 카탈로그 — 직군별 그룹, 계약 옵션·가격·전문화·가능 업무 노출(고객 표시용). */
+export function hqCatalog() {
+  return bySpecialization().map((g) => ({
+    roleFamily: g.roleFamily, roleTitle: roleTitle(g.roleFamily),
+    employees: g.employees.map((e) => ({
+      id: e.id, title: e.title, specialty: e.specialty,
+      goodAt: e.goodAt, notSupported: e.notSupported, recommendedIndustries: e.recommendedIndustries,
+      costTier: e.costTier, price: e.pricePlaceholder,
+      contractOptions: e.contractOptions.map((o) => ({ label: o.label, unit: o.unit, price: o.pricePlaceholder })),
+      version: e.version,
+      supported: e.supported, notRecommended: e.notRecommended,
+    })),
+  }));
 }
 
 /** 결과물 탭 데이터 — 결과가 있는(전달/승인) 업무의 결과 카드들. */
@@ -374,11 +392,21 @@ export function taskView(store: AlphaStore, t: AlphaTask) {
   const reusedMaterials = requiredKeys
     .filter((k) => have.has(k) && !providedKeys.has(k))
     .map((k) => ({ key: k, label: infoLabel(k) }));
+  // HQ 판단: 이 업무 유형들에 대해 가능/비추천인 전문 직원 (고객이 아무 직원에게 못 시킴)
+  const suitability = uniq(t.outputTypes).map((ot) => {
+    const r = recommendForOutput(ot);
+    return {
+      outputType: ot,
+      supported: r.supported.map((e) => ({ id: e.id, title: e.title })),
+      notRecommended: r.notRecommended.map((e) => ({ id: e.id, title: e.title })),
+    };
+  });
   return {
     id: t.id, title: t.title, status: t.status, statusLabel: STATUS_LABEL[t.status],
     assignees: uniq(t.requiredRoles).map(roleTitle),
     neededMaterials: t.missingInfo.map((k) => ({ key: k, label: infoLabel(k) })),
     reusedMaterials,
+    suitability,
     recommendedHires: t.missingRoles.map((r) => ({ roleFamily: r, title: roleTitle(r) })),
     provided: t.materials.map((m) => ({ label: infoLabel(m.infoKey), kind: m.kind, value: m.value })),
     results: t.results,

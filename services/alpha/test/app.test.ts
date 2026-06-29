@@ -315,6 +315,33 @@ test("Vault: dashboard에 자료 목록과 카테고리가 노출된다", () => 
   assert.equal(d.categories.length, 7);          // 7개 카테고리
 });
 
+test("HQ 카탈로그: dashboard에 전문 직원(직군별 그룹·계약 옵션·가격 Placeholder)이 노출된다", () => {
+  const s = tmp();
+  const d = dashboard(s);
+  assert.ok(Array.isArray(d.hqEmployees) && d.hqEmployees.length > 0);
+  const content = d.hqEmployees.find((g) => g.roleFamily === "content")!;
+  assert.ok(content.employees.length >= 4);                 // Writer 전문화 4종+
+  const sns = content.employees.find((e) => e.id === "writer-sns")!;
+  assert.equal(sns.costTier, "low");
+  assert.ok(/Placeholder/.test(sns.price));                 // 실금액 아님
+  assert.deepEqual(sns.contractOptions.map((o) => o.label), ["7일", "30일", "90일"]);
+  assert.ok(sns.supported.includes("social_post"));         // HQ 가능 업무
+});
+
+test("HQ 판단: 업무 카드에 가능/비추천 전문 직원이 표시된다(고객이 아무 직원에게 못 시킴)", () => {
+  const s = tmp();
+  const t = registerTask(s, "리뷰 답변 정리하고 싶어");       // customer_reply
+  const v = taskView(s, t);
+  const cr = v.suitability.find((x) => x.outputType === "customer_reply")!;
+  assert.deepEqual(cr.supported.map((e) => e.id), ["cs-responder"]); // CS만 가능
+  // 이미지 업무는 디자이너 계열만 가능
+  const t2 = registerTask(s, "신메뉴 사진 이미지 만들어줘");
+  const v2 = taskView(s, t2);
+  const img = v2.suitability.find((x) => x.outputType === "image")!;
+  assert.ok(img.supported.some((e) => e.id.startsWith("designer-")));
+  assert.ok(!img.supported.some((e) => e.id.startsWith("writer-")));  // Writer는 이미지 미지원
+});
+
 test("persistence: 재시작 후 업무·자료 유지", () => {
   const p = `${process.env.TMPDIR ?? "/tmp"}/atlas-fix-persist-${Math.round(performance.now() * 1000)}.json`;
   try { rmSync(p); } catch { /* noop */ }

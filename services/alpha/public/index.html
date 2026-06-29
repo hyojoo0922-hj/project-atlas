@@ -198,7 +198,32 @@ function secAllEmployees(){
 }
 function secEmployeeHub(){
   return `<h1>직원</h1><div class="muted">현재 계약한 직원과 앞으로 채용할 직원을 한곳에서 관리합니다.</div>`+
-    secCurrentStaff()+secRecommendedHires()+secAllEmployees();
+    secCurrentStaff()+secRecommendedHires()+secHQCatalog()+secAllEmployees();
+}
+function costLabel(t){return ({low:"낮은 원가",medium:"중간 원가",high:"높은 원가",very_high:"매우 높은 원가"})[t]||t;}
+function secHQCatalog(){
+  const groups=DB.hqEmployees||[];
+  if(!groups.length) return "";
+  let h=`<h2>전문 직원 (HQ 계약)</h2><div class="muted small" style="margin:0 2px 6px">직원은 구매가 아니라 계약입니다. 같은 직군 안에서도 전문 분야와 계약 옵션·원가가 다릅니다. HQ가 업무 적합성을 관리합니다.</div>`;
+  groups.forEach(g=>{
+    h+=`<div class="group-title">${esc(g.roleTitle)}</div>`;
+    h+=g.employees.map(e=>{
+      const opts=e.contractOptions.map(o=>`<span class="tag">${esc(o.label)} · ${esc(o.price)}</span>`).join("");
+      const can=(e.supported||[]).map(s=>`<span class="pill p-ready">${esc(outLabel(s))}</span>`).join(" ");
+      const warn=(e.notRecommended||[]).map(s=>`<span class="pill p-wait">${esc(outLabel(s))} 비추천</span>`).join(" ");
+      return `<div class="card"><div class="row between top"><div><div class="b">${esc(e.title)}</div>
+          <div class="muted small">${esc(e.specialty)} · ${esc(costLabel(e.costTier))} <span class="caption">v${esc(e.version)}</span></div></div>
+          <span class="pill p-done">${esc(e.price)}</span></div>
+        <div class="mt"><span class="tag">잘하는 업무</span><span class="muted small">${e.goodAt.map(esc).join(", ")}</span></div>
+        <div class="mt"><span class="tag">지원 안 함</span><span class="muted small">${e.notSupported.map(esc).join(", ")}</span></div>
+        <div class="mt"><span class="tag">추천 업종</span><span class="muted small">${e.recommendedIndustries.map(esc).join(", ")}</span></div>
+        <div class="mt small"><span class="b">계약 옵션</span> ${opts||'<span class="muted">옵션 준비 중</span>'}</div>
+        ${can?`<div class="mt small"><span class="b">HQ 가능 업무</span> ${can}</div>`:""}
+        ${warn?`<div class="mt small">${warn}</div>`:""}
+        <button class="btn2 mt" onclick="placeholder('계약/결제는 다음 Sprint에서 연결됩니다. (가격·기간은 Placeholder)')">계약 옵션 보기</button></div>`;
+    }).join("");
+  });
+  return h;
 }
 function recommendationReason(role, fallback){
   const d=DB, tasks=d.tasks||[], hired=d.employees.filter(e=>e.hired).map(e=>e.roleFamily);
@@ -297,6 +322,12 @@ function taskCard(t){
   // 기존 자료 사용 (Vault에서 자동 활용 — 다시 묻지 않음)
   if((t.reusedMaterials||[]).length){
     inner+=`<div class="mt small">기존 자료 사용: ${t.reusedMaterials.map(p=>`<span class="pill p-done">${esc(p.label)}</span>`).join(" ")}</div>`;
+  }
+  // HQ 판단: 이 업무에 가능한 전문 직원 (고객이 아무 직원에게 못 시킴 — HQ가 적합성 관리)
+  const sup=[]; const seen=new Set();
+  (t.suitability||[]).forEach(s=>(s.supported||[]).forEach(e=>{if(!seen.has(e.id)){seen.add(e.id);sup.push(e);}}));
+  if(sup.length){
+    inner+=`<div class="mt small">HQ 추천 전문 직원: ${sup.slice(0,4).map(e=>`<span class="pill p-ready">${esc(e.title)}</span>`).join(" ")}</div>`;
   }
   // 필요 자료 (미제공 — 자료 제공 입력)
   if(t.neededMaterials.length){

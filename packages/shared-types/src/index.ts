@@ -242,3 +242,5 @@ export * from "./onboarding-types.ts";
 export * from "./quality-types.ts";
 // MEMO #010 대표 비서 Work Loop 타입 재노출
 export * from "./work-loop-types.ts";
+// EMPLOYEE CONTRACT & PRICING CONSTITUTION — 계약/가격/전문화/HQ 판단 타입 재노출
+export * from "./employee-contract-types.ts";

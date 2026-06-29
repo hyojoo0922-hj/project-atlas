@@ -30,8 +30,18 @@
   .tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);display:flex;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #e2e8f0;z-index:5;backdrop-filter:blur(12px)}
   .tab{flex:1;background:transparent;color:#7a8390;border:none;border-radius:14px;padding:8px 4px;cursor:pointer;font-weight:800;font-size:12px}
   .tab.on{background:#111827;color:#fff}
-  .x{background:#f1f4f8;border:none;color:#7b8494;cursor:pointer;font-size:15px;line-height:1;padding:4px 8px;border-radius:10px}
+  .x{background:#f1f4f8;border:none;color:#7b8494;cursor:pointer;font-size:15px;line-height:1;padding:8px 10px;border-radius:10px;flex:0 0 auto}
   .x:hover{background:#e6ebf1;color:#17191f}
+  /* 다중 입력 행: 텍스트/URL · 파일선택 · 삭제(X) 가 겹치지 않게 */
+  .io-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .io-row .io-val,.io-row .io-file{min-width:0}
+  .io-row .io-val{flex:1 1 220px;width:auto}
+  .io-row .io-file{flex:1 1 180px;width:auto;max-width:100%;font-size:13px}
+  /* 긴 값/파일명 줄바꿈 */
+  .vbreak{overflow-wrap:anywhere;word-break:break-word}
+  /* 카드 하단 액션 영역(뱃지 + 수정/X) */
+  .card-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .card-actions .spacer{flex:1 1 auto}
   .toast{background:#eafbf1;border:1px solid #bfeccd;color:#155f38;border-radius:16px;padding:12px 14px;margin:10px 0;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .search{position:sticky;top:0;background:#f4f6f8;padding:6px 0;z-index:2}
   .big-cta{display:block;width:100%;font-size:18px;padding:18px 18px;border-radius:18px;margin-top:12px}
@@ -50,7 +60,16 @@
   .profile-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}
   .avatar{width:42px;height:42px;border-radius:15px;background:#111827;color:#fff;display:grid;place-items:center;font-weight:900;flex:0 0 auto}
   .group-title{font-size:13px;font-weight:900;color:#68717f;margin:18px 2px 8px}
-  @media(max-width:560px){.grid{grid-template-columns:1fr}.row.resp{align-items:stretch;flex-direction:column}.btn,.btn2{width:100%}h1{font-size:25px}.profile-head{flex-direction:column}.profile-head .pill{align-self:flex-start}}
+  @media(max-width:560px){
+    .grid{grid-template-columns:1fr}
+    .row.resp{align-items:stretch;flex-direction:column}
+    .btn:not(.sm),.btn2:not(.sm){width:100%}
+    h1{font-size:25px}
+    .profile-head{flex-direction:column}.profile-head .pill{align-self:flex-start}
+    /* 입력 행: 텍스트/URL 한 줄, 파일선택+X 다음 줄 */
+    .io-row .io-val{flex-basis:100%}
+    .io-row .io-file{flex:1 1 auto}
+  }
 </style></head>
 <body><div class="wrap">
 
@@ -285,13 +304,15 @@ function vaultCard(v){
   const kindTag=v.kind!=="text"?`<span class="tag">${esc(v.kind)}</span>`:"";
   const date=(v.createdAt||"").slice(0,10);
   return `<div class="card vault-card" data-search="${attr(`${v.value} ${v.categoryLabel} ${v.infoLabel} ${v.source} ${v.note||""}`.toLowerCase())}">
-    <div class="row between top"><div><span class="pill p-done">${esc(v.categoryLabel)}</span> ${kindTag}
-      <div class="b mt">${esc(v.value)}</div>
-      ${v.note?`<div class="muted small mt">메모: ${esc(v.note)}</div>`:""}
-      <div class="muted small mt">${esc(v.infoLabel)} · 출처: ${esc(v.source)}${v.byLabel?` · ${esc(v.byLabel)}`:""} · ${esc(date)}</div></div>
-      <div class="row" style="gap:6px"><span class="pill ${v.fromTask?'p-ok':'p-wait'}">${v.fromTask?'업무에서 수집':'직접 추가'}</span>
-        <button class="btn2 sm" onclick="startEditVault('${v.id}')">수정</button>
-        <button class="x" title="숨기기" onclick="hideVault('${v.id}')">✕</button></div></div></div>`;
+    <div><span class="pill p-done">${esc(v.categoryLabel)}</span> ${kindTag}
+      <div class="b mt vbreak">${esc(v.value)}</div>
+      ${v.note?`<div class="muted small mt vbreak">메모: ${esc(v.note)}</div>`:""}
+      <div class="muted small mt vbreak">${esc(v.infoLabel)} · 출처: ${esc(v.source)}${v.byLabel?` · ${esc(v.byLabel)}`:""} · ${esc(date)}</div></div>
+    <div class="card-actions">
+      <span class="pill ${v.fromTask?'p-ok':'p-wait'}">${v.fromTask?'업무에서 수집':'직접 추가'}</span>
+      <span class="spacer"></span>
+      <button class="btn2 sm" onclick="startEditVault('${v.id}')">수정</button>
+      <button class="x" title="숨기기" onclick="hideVault('${v.id}')">✕</button></div></div>`;
 }
 function vaultEditCard(v){
   const cats=DB.categories||[];

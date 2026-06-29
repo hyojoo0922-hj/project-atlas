@@ -155,7 +155,7 @@ function categoryForInfoKey(k: string): MaterialCategory {
   if (["target-audience", "faq"].includes(k)) return "customer_faq";
   return "etc";
 }
-/** Vault에 자료 1건 적재 (companyInfo 동기화 포함). 업무/직접 추가 공통 경로. */
+/** Vault에 자료 1건 적재. companyInfo 동기화는 refreshMemory가 담당. */
 function addToVault(store: AlphaStore, item: Omit<VaultItem, "id" | "createdAt"> & { createdAt?: string }): VaultItem {
   const v: VaultItem = {
     id: store.nextId("vlt"), createdAt: item.createdAt ?? new Date().toISOString(),
@@ -163,8 +163,16 @@ function addToVault(store: AlphaStore, item: Omit<VaultItem, "id" | "createdAt">
     note: item.note, sourceTaskId: item.sourceTaskId, byRole: item.byRole,
   };
   store.data.vault.push(v);
-  if (item.infoKey && !store.data.companyInfo.includes(item.infoKey)) store.data.companyInfo.push(item.infoKey);
   return v;
+}
+
+/** Company Memory 갱신 — companyInfo는 "보이는(숨김 아님) Vault 항목"의 infoKey 집합에서 파생.
+ *  숨김 자료는 자동 활용에서 제외(요구사항). 이후 모든 업무 상태 재계산. */
+function refreshMemory(store: AlphaStore): void {
+  store.data.companyInfo = uniq(
+    store.data.vault.filter((v) => !v.hidden).map((v) => v.infoKey).filter(Boolean),
+  );
+  store.data.tasks.forEach((t) => recompute(store, t));
 }
 
 /** 다중 입력 단위 — 하나의 제출에 텍스트/URL/파일/이미지를 여러 개 담는다. */
@@ -183,8 +191,7 @@ export function provideMaterials(store: AlphaStore, taskId: Id, infoKey: string,
     // 항목마다 별도 Vault 항목으로 보존(출처 업무·카테고리·연결 직원·생성일 유지)
     addToVault(store, { infoKey, category: categoryForInfoKey(infoKey), kind: it.kind, value: it.value, note, sourceTaskId: taskId, byRole });
   }
-  recompute(store, task);
-  store.data.tasks.forEach((t) => t.id !== taskId && recompute(store, t));
+  refreshMemory(store);   // companyInfo 재파생 + 전 업무 재계산
   store.save();
   return task;
 }
@@ -201,9 +208,33 @@ export function addVaultMaterials(
   const key = (infoKey && infoKey.trim()) || CATEGORY_TO_INFOKEY[category];
   const created = cleanItems(items).map((it) =>
     addToVault(store, { infoKey: key, category, kind: it.kind, value: it.value, note }));
-  store.data.tasks.forEach((t) => recompute(store, t));   // 기존 업무도 자동 활용 갱신
+  refreshMemory(store);   // companyInfo 재파생 + 기존 업무 자동 활용 갱신
   store.save();
   return created;
+}
+
+// ── 자료 수정 (카테고리·값·메모) — infoKey/출처는 유지 ──
+export function editVaultItem(
+  store: AlphaStore, id: Id, patch: { category?: MaterialCategory; value?: string; note?: string },
+): VaultItem | null {
+  const v = store.data.vault.find((x) => x.id === id);
+  if (!v) return null;
+  if (patch.category) v.category = patch.category;
+  if (typeof patch.value === "string" && patch.value.trim()) v.value = patch.value.trim();
+  if (typeof patch.note === "string") v.note = patch.note.trim() || undefined;
+  refreshMemory(store);
+  store.save();
+  return v;
+}
+
+// ── 자료 숨김 (삭제 아님 — hidden+archivedAt, 데이터 보존) ──
+export function hideVaultItem(store: AlphaStore, id: Id, now = new Date().toISOString()): boolean {
+  const v = store.data.vault.find((x) => x.id === id);
+  if (!v) return false;
+  v.hidden = true; v.archivedAt = now;
+  refreshMemory(store);   // 숨김 자료는 자동 활용에서 즉시 제외
+  store.save();
+  return true;
 }
 
 // ── 자료 탭 직접 추가 (단일) — 다중 경로에 위임(하위호환) ──
@@ -213,10 +244,10 @@ export function addVaultMaterial(
   return addVaultMaterials(store, category, [{ kind, value }], note, infoKey)[0]!;
 }
 
-/** 자료 탭 표시용 — Vault 항목을 라벨/카테고리/출처/날짜와 함께. 최신순. */
+/** 자료 탭 표시용 — Vault 항목을 라벨/카테고리/출처/날짜와 함께. 최신순. 숨김 제외. */
 export function vaultView(store: AlphaStore) {
   const taskTitle = (id?: Id) => store.data.tasks.find((t) => t.id === id)?.title;
-  return [...store.data.vault].reverse().map((v) => ({
+  return [...store.data.vault].filter((v) => !v.hidden).reverse().map((v) => ({
     id: v.id, infoKey: v.infoKey, infoLabel: infoLabel(v.infoKey),
     category: v.category, categoryLabel: CATEGORY_LABEL[v.category],
     kind: v.kind, value: v.value, note: v.note,

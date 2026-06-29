@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
-  addVaultMaterial, addVaultMaterials, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
-  proceedWithPartial, provideMaterial, provideMaterials, registerTask, reviseTask, setTextGenerator, taskView, vaultView,
+  addVaultMaterial, addVaultMaterials, ALPHA_PASS, approveTask, dashboard, editVaultItem, executeTask, hideTask,
+  hideVaultItem, hire, login, proceedWithPartial, provideMaterial, provideMaterials, registerTask, reviseTask,
+  setTextGenerator, taskView, vaultView,
 } from "../src/app.ts";
 import { makeTextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 
@@ -394,6 +395,52 @@ test("하위호환: 단일 provideMaterial/addVaultMaterial 그대로 동작", (
   const v = addVaultMaterial(s, "product", "url", "https://example.com/menu");
   assert.equal(v.kind, "url");
   assert.equal(s.data.vault.length, 2);
+});
+
+test("자료 수정: 카테고리·값·메모 변경", () => {
+  const s = tmp();
+  const v = addVaultMaterial(s, "brand", "text", "따뜻한 말투", "초기 메모");
+  const edited = editVaultItem(s, v.id, { category: "liked_style", value: "담백한 말투", note: "수정 메모" })!;
+  assert.equal(edited.category, "liked_style");
+  assert.equal(edited.value, "담백한 말투");
+  assert.equal(edited.note, "수정 메모");
+  const view = vaultView(s)[0]!;
+  assert.equal(view.categoryLabel, "좋아하는 스타일");
+  assert.equal(view.value, "담백한 말투");
+});
+
+test("자료 숨김: 삭제가 아니라 hidden+archivedAt (데이터 보존)", () => {
+  const s = tmp();
+  const v = addVaultMaterial(s, "product", "url", "https://example.com/menu");
+  assert.equal(hideVaultItem(s, v.id, "2026-06-29T00:00:00.000Z"), true);
+  const raw = s.data.vault.find((x) => x.id === v.id)!;
+  assert.ok(raw);                                  // 데이터 존재(삭제 아님)
+  assert.equal(raw.hidden, true);
+  assert.equal(raw.archivedAt, "2026-06-29T00:00:00.000Z");
+});
+
+test("자료 숨김: 자료 탭 기본 목록에서 제외", () => {
+  const s = tmp();
+  const a = addVaultMaterial(s, "brand", "text", "말투 A");
+  addVaultMaterial(s, "product", "text", "상품 B");
+  hideVaultItem(s, a.id);
+  const view = vaultView(s);
+  assert.equal(view.length, 1);                    // 숨김 1건 제외
+  assert.ok(!view.some((x) => x.id === a.id));
+  assert.equal(dashboard(s).vault.length, 1);      // dashboard도 동일
+});
+
+test("자료 숨김: 자동 활용에서 제외 → 업무가 해당 자료를 다시 요청", () => {
+  const s = tmp();
+  const v = addVaultMaterial(s, "brand", "text", "따뜻한 말투");   // brand-voice 보유
+  const t1 = registerTask(s, "신메뉴 소개 글 써줘");               // social_post: brand-voice + channel
+  assert.ok(taskView(s, t1).reusedMaterials.some((m) => m.key === "brand-voice")); // 자동 활용
+  hideVaultItem(s, v.id);                                          // 숨김
+  assert.ok(!s.data.companyInfo.includes("brand-voice"));          // companyInfo에서 제외
+  const t2 = registerTask(s, "신상품 소개 글 써줘");
+  assert.ok(taskView(s, t2).neededMaterials.some((m) => m.key === "brand-voice")); // 다시 요청
+  // 기존 업무도 재계산되어 brand-voice를 다시 필요로 함
+  assert.ok(taskView(s, t1).neededMaterials.some((m) => m.key === "brand-voice"));
 });
 
 test("persistence: 재시작 후 업무·자료 유지", () => {

@@ -77,6 +77,8 @@ export interface VaultItem {
   sourceTaskId?: Id;           // 업무 중 제공된 경우 그 업무 id (없으면 자료 탭 직접 추가)
   byRole?: RoleFamily;         // 이 자료를 필요로 한(연결) 직원 직군
   createdAt: string;           // 생성일 ISO
+  hidden?: boolean;            // 숨김 처리(삭제 아님 — 데이터 보존, 목록·자동활용에서 제외)
+  archivedAt?: string;         // 숨김 처리 시각(ISO)
 }
 
 export interface AlphaData {

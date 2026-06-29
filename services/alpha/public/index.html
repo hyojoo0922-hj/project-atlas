@@ -73,7 +73,7 @@
 <script>
 let token="", DB=null, ATAB="home", TOAST="";
 const TABS=[["home","홈"],["tasks","업무"],["vault","자료"],["results","결과물"],["staff","직원"]];
-let VFILTER="all";
+let VFILTER="all", VEDIT="";
 const $=(id)=>document.getElementById(id);
 const esc=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const attr=(s)=>esc(s).replace(/"/g,"&quot;");
@@ -276,13 +276,27 @@ function secVault(){
   return h+`</div>`;
 }
 function vaultCard(v){
+  if(v.id===VEDIT) return vaultEditCard(v);
   const kindTag=v.kind!=="text"?`<span class="tag">${esc(v.kind)}</span>`:"";
   const date=(v.createdAt||"").slice(0,10);
-  return `<div class="card vault-card" data-search="${attr(`${v.value} ${v.categoryLabel} ${v.infoLabel} ${v.source}`.toLowerCase())}">
+  return `<div class="card vault-card" data-search="${attr(`${v.value} ${v.categoryLabel} ${v.infoLabel} ${v.source} ${v.note||""}`.toLowerCase())}">
     <div class="row between top"><div><span class="pill p-done">${esc(v.categoryLabel)}</span> ${kindTag}
       <div class="b mt">${esc(v.value)}</div>
+      ${v.note?`<div class="muted small mt">메모: ${esc(v.note)}</div>`:""}
       <div class="muted small mt">${esc(v.infoLabel)} · 출처: ${esc(v.source)}${v.byLabel?` · ${esc(v.byLabel)}`:""} · ${esc(date)}</div></div>
-      <span class="pill ${v.fromTask?'p-ok':'p-wait'}">${v.fromTask?'업무에서 수집':'직접 추가'}</span></div></div>`;
+      <div class="row" style="gap:6px"><span class="pill ${v.fromTask?'p-ok':'p-wait'}">${v.fromTask?'업무에서 수집':'직접 추가'}</span>
+        <button class="btn2 sm" onclick="startEditVault('${v.id}')">수정</button>
+        <button class="x" title="숨기기" onclick="hideVault('${v.id}')">✕</button></div></div></div>`;
+}
+function vaultEditCard(v){
+  const cats=DB.categories||[];
+  const opts=cats.map(c=>`<option value="${c.key}" ${c.key===v.category?'selected':''}>${esc(c.label)}</option>`).join("");
+  return `<div class="card"><div class="caption">자료 수정</div>
+    <select id="ecat_${v.id}" class="mt">${opts}</select>
+    <input id="eval_${v.id}" class="mt" value="${attr(v.value)}" placeholder="자료명/값">
+    <input id="enote_${v.id}" class="mt" value="${attr(v.note||'')}" placeholder="메모(선택)">
+    <div class="row mt" style="gap:6px"><button class="btn sm" onclick="saveEditVault('${v.id}')">저장</button>
+      <button class="btn2 sm" onclick="VEDIT='';render()">취소</button></div></div>`;
 }
 function secResults(){
   const list=DB.deliverables||[];
@@ -400,6 +414,13 @@ async function addVault(){
   const r=await api("/api/vault/add",{category:cat,items,note:note||undefined});DB=r.dashboard;render();
 }
 function setVFilter(c){VFILTER=c;render();}
+function startEditVault(id){VEDIT=id;render();}
+async function saveEditVault(id){
+  const category=($(`ecat_${id}`)||{}).value, value=($(`eval_${id}`)||{}).value.trim(), note=($(`enote_${id}`)||{}).value.trim();
+  if(!value){alert("자료명/값을 입력하세요");return;}
+  const r=await api("/api/vault/edit",{id,category,value,note});DB=r.dashboard;VEDIT="";render();
+}
+async function hideVault(id){const r=await api("/api/vault/hide",{id});DB=r.dashboard;render();}
 function renderVaultOnly(){
   const q=($("vaultSearch")?.value||"").toLowerCase().trim();
   document.querySelectorAll(".vault-card").forEach(el=>{

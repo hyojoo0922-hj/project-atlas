@@ -7,7 +7,7 @@ import type { Material, RoleFamily } from "../../../packages/shared-types/src/in
 import type { MaterialCategory } from "./store.ts";
 import { AlphaStore } from "./store.ts";
 import {
-  addVaultMaterials, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
+  addVaultMaterials, ALPHA_PASS, approveTask, dashboard, editVaultItem, executeTask, hideVaultItem, hire, hideTask, login,
   type MaterialItem, provideMaterials, proceedWithPartial, registerTask, reviseTask, taskView,
 } from "./app.ts";
 
@@ -93,6 +93,18 @@ async function handle(url: string, req: import("node:http").IncomingMessage, res
         const created = addVaultMaterials(store, category, items, note, infoKey);
         if (!created.length) { send(res, 400, { error: "empty" }); return; }
         reply(); return;
+      }
+      case "/api/vault/edit": {   // 자료 카드 수정 (카테고리·값·메모)
+        const v = editVaultItem(store, String(b.id ?? ""), {
+          category: b.category as MaterialCategory | undefined,
+          value: b.value as string | undefined, note: b.note as string | undefined,
+        });
+        if (!v) { send(res, 404, { error: "no item" }); return; }
+        reply(); return;
+      }
+      case "/api/vault/hide": {   // 자료 카드 숨김(삭제 아님)
+        const ok = hideVaultItem(store, String(b.id ?? ""));
+        send(res, ok ? 200 : 404, { ok, dashboard: dashboard(store) }); return;
       }
       case "/api/hire": { hire(store, b.roleFamily as RoleFamily, b.persona as string | undefined); reply(); return; }
       case "/api/hide": {   // 카드 숨기기(삭제 아님)

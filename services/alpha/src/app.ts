@@ -167,30 +167,50 @@ function addToVault(store: AlphaStore, item: Omit<VaultItem, "id" | "createdAt">
   return v;
 }
 
-// ── 자료 제공 (텍스트/URL/파일/이미지). Company Memory(Vault)에 축적 + 업무 갱신 ──
-export function provideMaterial(store: AlphaStore, taskId: Id, infoKey: string, kind: Material["kind"], value: string, note?: string): AlphaTask | null {
+/** 다중 입력 단위 — 하나의 제출에 텍스트/URL/파일/이미지를 여러 개 담는다. */
+export interface MaterialItem { kind: Material["kind"]; value: string }
+const cleanItems = (items: MaterialItem[]): MaterialItem[] =>
+  (items ?? []).map((it) => ({ kind: it.kind, value: String(it.value ?? "").trim() })).filter((it) => it.value);
+
+// ── 자료 제공 (다중) — 한 번에 여러 항목. Company Memory(Vault)에 분리 저장 + 업무 갱신 ──
+export function provideMaterials(store: AlphaStore, taskId: Id, infoKey: string, items: MaterialItem[], note?: string): AlphaTask | null {
   const task = store.data.tasks.find((t) => t.id === taskId);
   if (!task) return null;
-  const m: Material = { id: store.nextId("mat"), taskId, infoKey, kind, value, note };
-  task.materials.push(m);
-  // Company Knowledge Vault에 기본 저장 (출처 업무·카테고리·연결 직원·생성일 기록)
   const byRole = uniq(toSubTasks(task.outputTypes).filter((st) => st.requiredInfo.includes(infoKey)).map((st) => st.roleFamily))[0];
-  addToVault(store, { infoKey, category: categoryForInfoKey(infoKey), kind, value, note, sourceTaskId: taskId, byRole });
+  for (const it of cleanItems(items)) {
+    const m: Material = { id: store.nextId("mat"), taskId, infoKey, kind: it.kind, value: it.value, note };
+    task.materials.push(m);
+    // 항목마다 별도 Vault 항목으로 보존(출처 업무·카테고리·연결 직원·생성일 유지)
+    addToVault(store, { infoKey, category: categoryForInfoKey(infoKey), kind: it.kind, value: it.value, note, sourceTaskId: taskId, byRole });
+  }
   recompute(store, task);
   store.data.tasks.forEach((t) => t.id !== taskId && recompute(store, t));
   store.save();
   return task;
 }
 
-// ── 자료 탭에서 직접 자료 추가 (업무와 무관) — 카테고리 선택, 이후 업무에 자동 활용 ──
+// ── 자료 제공 (단일) — 다중 경로에 위임(하위호환) ──
+export function provideMaterial(store: AlphaStore, taskId: Id, infoKey: string, kind: Material["kind"], value: string, note?: string): AlphaTask | null {
+  return provideMaterials(store, taskId, infoKey, [{ kind, value }], note);
+}
+
+// ── 자료 탭 직접 추가 (다중) — 한 번에 여러 항목, 같은 카테고리/메모/생성일로 분리 저장 ──
+export function addVaultMaterials(
+  store: AlphaStore, category: MaterialCategory, items: MaterialItem[], note?: string, infoKey?: string,
+): VaultItem[] {
+  const key = (infoKey && infoKey.trim()) || CATEGORY_TO_INFOKEY[category];
+  const created = cleanItems(items).map((it) =>
+    addToVault(store, { infoKey: key, category, kind: it.kind, value: it.value, note }));
+  store.data.tasks.forEach((t) => recompute(store, t));   // 기존 업무도 자동 활용 갱신
+  store.save();
+  return created;
+}
+
+// ── 자료 탭 직접 추가 (단일) — 다중 경로에 위임(하위호환) ──
 export function addVaultMaterial(
   store: AlphaStore, category: MaterialCategory, kind: Material["kind"], value: string, note?: string, infoKey?: string,
 ): VaultItem {
-  const key = (infoKey && infoKey.trim()) || CATEGORY_TO_INFOKEY[category];
-  const v = addToVault(store, { infoKey: key, category, kind, value, note });
-  store.data.tasks.forEach((t) => recompute(store, t));   // 기존 업무도 자동 활용 갱신
-  store.save();
-  return v;
+  return addVaultMaterials(store, category, [{ kind, value }], note, infoKey)[0]!;
 }
 
 /** 자료 탭 표시용 — Vault 항목을 라벨/카테고리/출처/날짜와 함께. 최신순. */

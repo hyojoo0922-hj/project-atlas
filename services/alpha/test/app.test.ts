@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { AlphaStore } from "../src/store.ts";
 import {
-  addVaultMaterial, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
-  proceedWithPartial, provideMaterial, registerTask, reviseTask, setTextGenerator, taskView, vaultView,
+  addVaultMaterial, addVaultMaterials, ALPHA_PASS, approveTask, dashboard, executeTask, hire, hideTask, login,
+  proceedWithPartial, provideMaterial, provideMaterials, registerTask, reviseTask, setTextGenerator, taskView, vaultView,
 } from "../src/app.ts";
 import { makeTextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 
@@ -340,6 +340,60 @@ test("HQ 판단: 업무 카드에 가능/비추천 전문 직원이 표시된다
   const img = v2.suitability.find((x) => x.outputType === "image")!;
   assert.ok(img.supported.some((e) => e.id.startsWith("designer-")));
   assert.ok(!img.supported.some((e) => e.id.startsWith("writer-")));  // Writer는 이미지 미지원
+});
+
+test("다중 입력(자료 탭): 한 번에 여러 항목 → 여러 Vault 항목으로 분리 저장, 모두 표시", () => {
+  const s = tmp();
+  const created = addVaultMaterials(s, "reference", [
+    { kind: "text", value: "미니멀 무드" },
+    { kind: "url", value: "https://example.com/ref1" },
+    { kind: "image", value: "ref-shot.png" },
+  ], "촬영 레퍼런스 묶음");
+  assert.equal(created.length, 3);
+  assert.equal(s.data.vault.length, 3);
+  // 각 항목이 카테고리/메모/생성일 유지
+  assert.ok(s.data.vault.every((v) => v.category === "reference" && v.note === "촬영 레퍼런스 묶음" && v.createdAt));
+  assert.deepEqual(s.data.vault.map((v) => v.kind).sort(), ["image", "text", "url"]);
+  // 자료 탭에 모두 노출(직접 추가)
+  const view = vaultView(s);
+  assert.equal(view.length, 3);
+  assert.ok(view.every((v) => v.source === "직접 추가" && v.categoryLabel === "레퍼런스"));
+});
+
+test("다중 입력(자료 탭): 빈 값은 건너뛴다", () => {
+  const s = tmp();
+  const created = addVaultMaterials(s, "brand", [
+    { kind: "text", value: "따뜻한 말투" }, { kind: "text", value: "   " }, { kind: "text", value: "" },
+  ]);
+  assert.equal(created.length, 1);
+  assert.equal(s.data.vault.length, 1);
+});
+
+test("다중 입력(업무 자료 제공): 같은 자료 키에 여러 항목 → Material·Vault 모두 분리 저장(출처 업무 유지)", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 사진 이미지 만들어줘");   // image → design-reference 등 필요
+  const r = provideMaterials(s, t.id, "design-reference", [
+    { kind: "url", value: "https://example.com/a" },
+    { kind: "image", value: "moodboard.png" },
+  ])!;
+  // task.materials에 2건
+  const provided = r.materials.filter((m) => m.infoKey === "design-reference");
+  assert.equal(provided.length, 2);
+  // Vault에도 2건, 출처=업무
+  const vaultRefs = s.data.vault.filter((v) => v.infoKey === "design-reference");
+  assert.equal(vaultRefs.length, 2);
+  assert.ok(vaultRefs.every((v) => v.sourceTaskId === t.id && v.category === "reference"));
+  assert.ok(s.data.companyInfo.includes("design-reference"));  // 자동 활용 동기화
+});
+
+test("하위호환: 단일 provideMaterial/addVaultMaterial 그대로 동작", () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "따뜻하게");
+  assert.equal(s.data.vault.filter((v) => v.infoKey === "brand-voice").length, 1);
+  const v = addVaultMaterial(s, "product", "url", "https://example.com/menu");
+  assert.equal(v.kind, "url");
+  assert.equal(s.data.vault.length, 2);
 });
 
 test("persistence: 재시작 후 업무·자료 유지", () => {

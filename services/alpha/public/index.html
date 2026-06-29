@@ -256,14 +256,16 @@ function secVault(){
   const filterBtns=`<button class="tag ${VFILTER==='all'?'p-ok':''}" onclick="setVFilter('all')">전체</button>`+
     cats.map(c=>`<button class="tag ${VFILTER===c.key?'p-ok':''}" onclick="setVFilter('${c.key}')">${esc(c.label)}</button>`).join("");
   let h=`<h1>자료</h1><div class="muted">회사 자료를 한곳에 모읍니다. 여기 있는 자료는 다음 업무에서 자동으로 사용됩니다.</div>`;
-  // 직접 추가 폼
+  // 직접 추가 폼 (다중 입력 — 여러 텍스트/URL/파일/이미지를 한 묶음으로)
   h+=`<div class="card"><div class="caption">자료 직접 추가</div>
     <div class="row resp mt" style="gap:6px">
       <select id="vcat">${opts}</select>
-      <input id="vval" placeholder="텍스트 또는 URL (예: 따뜻하고 친근한 말투)">
-      <input type="file" id="vfile">
+      <input id="vnote" placeholder="메모(선택) — 이 묶음 전체에 적용"></div>
+    <div id="vrows" class="mt">${ioRow()}</div>
+    <div class="row mt" style="gap:6px">
+      <button class="btn2 sm" type="button" onclick="addRow('vrows')">+ 항목 추가</button>
       <button class="btn" onclick="addVault()">자료 저장</button></div>
-    <div class="muted small mt">텍스트·URL·파일명·이미지명(mock)을 저장할 수 있습니다. 실제 파일 업로드는 아직 지원하지 않습니다.</div></div>`;
+    <div class="muted small mt">텍스트·URL·파일명·이미지명(mock)을 여러 개 추가할 수 있습니다. 실제 파일 업로드는 지원하지 않습니다.</div></div>`;
   // 필터 + 검색
   h+=`<div class="mt">${filterBtns}</div>
     <div class="search mt"><input id="vaultSearch" placeholder="자료 검색: 내용, 카테고리, 출처" oninput="renderVaultOnly()"></div>`;
@@ -329,15 +331,16 @@ function taskCard(t){
   if(sup.length){
     inner+=`<div class="mt small">HQ 추천 전문 직원: ${sup.slice(0,4).map(e=>`<span class="pill p-ready">${esc(e.title)}</span>`).join(" ")}</div>`;
   }
-  // 필요 자료 (미제공 — 자료 제공 입력)
+  // 필요 자료 (미제공 — 자료 제공 입력, 다중 가능)
   if(t.neededMaterials.length){
-    inner+=`<div class="mt b small">필요한 자료</div><div class="muted small">텍스트, 파일, 이미지, URL 중 편한 방식으로 제공하세요.</div>`;
+    inner+=`<div class="mt b small">필요한 자료</div><div class="muted small">텍스트·파일·이미지·URL을 여러 개 추가할 수 있습니다.</div>`;
     t.neededMaterials.forEach(m=>{
-      inner+=`<div class="row resp mt" style="gap:6px">
-        <span class="tag p-wait" style="min-width:84px">${esc(m.label)} · 미제공</span>
-        <input id="mat_${t.id}_${m.key}" placeholder="텍스트 또는 URL">
-        <input type="file" id="file_${t.id}_${m.key}">
-        <button class="btn sm" onclick="provide('${t.id}','${m.key}')">제공</button></div>`;
+      const cid=`prows_${t.id}_${m.key}`;
+      inner+=`<div class="mt"><span class="tag p-wait">${esc(m.label)} · 미제공</span>
+        <div id="${cid}" class="mt">${ioRow()}</div>
+        <div class="row" style="gap:6px">
+          <button class="btn2 sm" type="button" onclick="addRow('${cid}')">+ 항목 추가</button>
+          <button class="btn sm" onclick="provide('${t.id}','${m.key}')">제공</button></div></div>`;
     });
   }
   // 추천 채용 (업무 기준 — 비차단 업셀)
@@ -367,24 +370,34 @@ function taskCard(t){
 
 async function register(){const v=($("newtask")||{}).value?.trim();if(!v)return;const r=await api("/api/register",{title:v});DB=r.dashboard;render();}
 async function quick(title){const r=await api("/api/register",{title});DB=r.dashboard;render();}
+// ── 다중 입력 행(텍스트/URL/파일/이미지) 공용 헬퍼 ──
+function ioRow(){return `<div class="row io-row" style="gap:6px"><input class="io-val" placeholder="텍스트 또는 URL"><input type="file" class="io-file"><button class="x" type="button" title="삭제" onclick="this.closest('.io-row').remove()">✕</button></div>`;}
+function addRow(id){const c=$(id);if(c)c.insertAdjacentHTML("beforeend",ioRow());}
+function rowsToItems(container){
+  const items=[];
+  if(!container)return items;
+  container.querySelectorAll(".io-row").forEach(row=>{
+    const fileEl=row.querySelector(".io-file"), txt=(row.querySelector(".io-val")?.value||"").trim();
+    let kind="text",value=txt;
+    if(fileEl&&fileEl.files&&fileEl.files[0]){const f=fileEl.files[0];value=f.name;kind=f.type.startsWith("image/")?"image":"file";}
+    else if(/^https?:\/\//.test(txt))kind="url";
+    if(value)items.push({kind,value});
+  });
+  return items;
+}
 async function provide(taskId,key){
-  const fileEl=$(`file_${taskId}_${key}`), txt=$(`mat_${taskId}_${key}`).value.trim();
-  let kind="text",value=txt;
-  if(fileEl&&fileEl.files&&fileEl.files[0]){const f=fileEl.files[0];value=f.name;kind=f.type.startsWith("image/")?"image":"file";}
-  else if(/^https?:\/\//.test(txt))kind="url";
-  if(!value){alert("자료를 입력하거나 파일을 선택하세요");return;}
-  const r=await api("/api/provide",{taskId,infoKey:key,kind,value});DB=r.dashboard;render();
+  const items=rowsToItems($(`prows_${taskId}_${key}`));
+  if(!items.length){alert("자료를 1개 이상 입력하거나 파일을 선택하세요");return;}
+  const r=await api("/api/provide",{taskId,infoKey:key,items});DB=r.dashboard;render();
 }
 async function execute(taskId){const r=await api("/api/execute",{taskId});DB=r.dashboard;render();}
 async function proceed(taskId){const r=await api("/api/proceed",{taskId});DB=r.dashboard;render();}
 async function hire(roleFamily){const r=await api("/api/hire",{roleFamily});DB=r.dashboard;render();}
 async function addVault(){
-  const cat=($("vcat")||{}).value||"etc", fileEl=$("vfile"), txt=($("vval")||{}).value.trim();
-  let kind="text",value=txt;
-  if(fileEl&&fileEl.files&&fileEl.files[0]){const f=fileEl.files[0];value=f.name;kind=f.type.startsWith("image/")?"image":"file";}
-  else if(/^https?:\/\//.test(txt))kind="url";
-  if(!value){alert("자료를 입력하거나 파일을 선택하세요");return;}
-  const r=await api("/api/vault/add",{category:cat,kind,value});DB=r.dashboard;render();
+  const cat=($("vcat")||{}).value||"etc", note=($("vnote")||{}).value.trim();
+  const items=rowsToItems($("vrows"));
+  if(!items.length){alert("자료를 1개 이상 입력하거나 파일을 선택하세요");return;}
+  const r=await api("/api/vault/add",{category:cat,items,note:note||undefined});DB=r.dashboard;render();
 }
 function setVFilter(c){VFILTER=c;render();}
 function renderVaultOnly(){

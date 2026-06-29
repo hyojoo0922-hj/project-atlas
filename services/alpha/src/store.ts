@@ -38,6 +38,11 @@ export interface TaskResult {
   requestType?: RequestType;   // 결과물 요청 유형
   creditsUsed?: number;        // 이 결과물에 사용된 크레딧(이미지 크레딧 경로)
   standardLabel?: string;      // 적용된 HQ Output Standard 라벨(직원 자유 제출 아님)
+  // HQ Output Quality (Placeholder 평가 — 실제 AI 평가 아님)
+  qualityLabel?: string;       // Excellent | Good | Draft | Needs Revision
+  qualityScore?: number;       // 0..100 Placeholder
+  qualityCategory?: string;    // writer | designer | marketing | cs | report
+  recommendRevision?: boolean; // Draft 이하 → 대표에게 수정 요청 권장
 }
 
 export interface AlphaTask {

@@ -19,6 +19,7 @@
 | [0013](0013-employee-contract-and-pricing.md) | 직원은 계약이다 — 전문 직원·원가 기준 가격·HQ 판단 | Accepted |
 | [0014](0014-credit-gate-and-image-request-monetization.md) | 크레딧 게이트 & 이미지 요청 수익화 흐름(실제 생성 OFF) | Accepted |
 | [0015](0015-employee-output-standard.md) | 직원 Output Standard — 유형별 HQ 표준에 맞춘 결과물 제출 | Accepted |
+| [0016](0016-employee-output-quality-standard.md) | 직원 Output Quality Standard — HQ Quality Check(Placeholder) | Accepted |
 
 > 새 ADR: `NNNN-title.md`로 추가하고 이 표를 갱신.
 > ⭐ 헌법 개정: [#001](../constitution/AMENDMENT-001-ai-employee-ecosystem.md)(ADR 0005), [#002](../constitution/AMENDMENT-002-company-centric-organization.md)(ADR 0007), [#003](../constitution/AMENDMENT-003-ceo-and-living-organization.md)(ADR 0008), [#004 AI 공동창업자](../constitution/AMENDMENT-004-ai-cofounder-onboarding.md)(ADR 0009).

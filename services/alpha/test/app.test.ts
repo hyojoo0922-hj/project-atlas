@@ -561,6 +561,46 @@ test("Output Standard: 이미지 기획안도 표준(이미지 제작 기획안)
   assert.equal(card.standardLabel, "이미지 제작 기획안");
 });
 
+test("Output Quality: 결과물에 품질 라벨/점수/수정권장 기록 + 결과물 탭 노출", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  const done = (await executeTask(s, t.id))!;
+  const r = done.results[0]!;
+  assert.ok(["Excellent", "Good", "Draft", "Needs Revision"].includes(r.qualityLabel!));
+  assert.equal(typeof r.qualityScore, "number");
+  assert.equal(r.qualityCategory, "writer");
+  // 결과물 탭에도 품질 노출
+  approveTask(s, done.id, { overall: 5 });
+  const card = dashboard(s).deliverables.find((x) => x.taskId === done.id)!;
+  assert.equal(card.qualityLabel, r.qualityLabel);
+  assert.equal(typeof card.qualityScore, "number");
+});
+
+test("Output Quality: 초안(일부 자료)은 Draft → 수정 요청 권장 플래그", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "따뜻"); // 일부만 → draft
+  const done = (await proceedWithPartial(s, t.id))!;
+  const r = done.results[0]!;
+  assert.equal(r.state, "draft");
+  assert.equal(r.qualityLabel, "Draft");
+  assert.equal(r.recommendRevision, true);
+});
+
+test("Output Quality + Satisfaction: 품질과 대표 만족도가 함께 보존된다", async () => {
+  const s = tmp();
+  const t = registerTask(s, "신메뉴 소개 글 써줘");
+  provideMaterial(s, t.id, "brand-voice", "text", "v");
+  provideMaterial(s, t.id, "channel", "text", "instagram");
+  const done = (await executeTask(s, t.id))!;
+  approveTask(s, done.id, { overall: 4, comment: "좋아요" });
+  const task = s.data.tasks.find((x) => x.id === done.id)!;
+  assert.equal(task.feedback!.overall, 4);                 // 대표 만족도 저장
+  assert.ok(task.results[0]!.qualityLabel);                // HQ 품질도 함께 보존
+});
+
 test("persistence: 재시작 후 업무·자료 유지", () => {
   const p = `${process.env.TMPDIR ?? "/tmp"}/atlas-fix-persist-${Math.round(performance.now() * 1000)}.json`;
   try { rmSync(p); } catch { /* noop */ }

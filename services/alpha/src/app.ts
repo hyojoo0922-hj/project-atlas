@@ -6,6 +6,7 @@ import { getOutputScope, onboardingQuestionsFor } from "../../../packages/qualit
 import { makeTextGenerator, type TextGenerator } from "../../../packages/cost-control/src/text-gateway.ts";
 import { bySpecialization, recommendForOutput } from "../../../packages/hq-catalog/src/hq-catalog.ts";
 import { getOutputStandard, renderStandardForPrompt } from "../../../packages/hq-catalog/src/output-standard.ts";
+import { evaluateQuality, qualityCategoryForOutput } from "../../../packages/hq-catalog/src/output-quality.ts";
 import { AlphaStore, type AlphaTask, type ImageChoice, type Material, type MaterialCategory, type TaskResult, type TaskStatus, type VaultItem } from "./store.ts";
 
 export const ALPHA_PASS = process.env.ATLAS_PASS ?? "atlas";
@@ -283,6 +284,13 @@ const designerPersona = (store: AlphaStore): string | undefined =>
 const writerPersona = (store: AlphaStore): string | undefined =>
   store.data.employees.find((e) => e.dna.genome.roleFamily === "content")?.dna.phenotype.persona;
 
+/** HQ Output Quality(Placeholder) 평가 결과를 TaskResult에 부착. pending은 평가 대상 아님. */
+function attachQuality(r: TaskResult): TaskResult {
+  const q = evaluateQuality(r.content, qualityCategoryForOutput(r.outputType), r.state);
+  if (q) { r.qualityLabel = q.label; r.qualityScore = q.score; r.qualityCategory = q.category; r.recommendRevision = q.recommendRevision; }
+  return r;
+}
+
 function imagePendingContent(company: string, by: string): string {
   return [
     `🖼️ 이미지 생성 준비됨 · ${by}`,
@@ -312,11 +320,11 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
         if (store.data.credits < IMAGE_CREDIT_COST) { creditShortfall = true; partial = true; continue; }
         store.data.credits -= IMAGE_CREDIT_COST;                            // 크레딧 차감(실결제 아님)
         const by = designerPersona(store) ?? writerPersona(store) ?? "대표 비서";
-        results.push({
+        results.push(attachQuality({
           outputType: p.outputType, requestedOutputType: p.outputType, by,
           state: "pending", requestType: "image_credit", creditsUsed: IMAGE_CREDIT_COST,
           content: imagePendingContent(store.data.company.name, by),
-        });
+        }));
         store.data.usage.push({
           taskId: task.id, outputType: p.outputType, model: "image-gen(off)", mode: "mock",
           inputTokens: 0, outputTokens: 0, costUsd: IMAGE_EST_USD, credits: IMAGE_CREDIT_COST, requestType: "image_credit",
@@ -332,7 +340,7 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
         prompt: buildPrompt(store, task, "image_brief", true), fallbackText, draft: true,
       });
       const requestType = choice === "designer" ? "image_designer_brief" : "image_brief";
-      results.push({ outputType: "image_brief", requestedOutputType: p.outputType, by, state: "draft", requestType, content: gen.text, standardLabel: getOutputStandard("image_brief")?.label });
+      results.push(attachQuality({ outputType: "image_brief", requestedOutputType: p.outputType, by, state: "draft", requestType, content: gen.text, standardLabel: getOutputStandard("image_brief")?.label }));
       store.data.usage.push({
         taskId: task.id, outputType: "image_brief", model: gen.model, mode: gen.mode,
         inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd, credits: 0, requestType,
@@ -351,12 +359,12 @@ export async function executeTask(store: AlphaStore, taskId: Id): Promise<AlphaT
       prompt: buildPrompt(store, task, p.deliveredType, draft),
       fallbackText, draft,
     });
-    results.push({
+    results.push(attachQuality({
       outputType: p.deliveredType,
       requestedOutputType: p.deliveredType !== p.outputType ? p.outputType : undefined,
       by, state: p.mode, requestType: "text", content: gen.text,
       standardLabel: getOutputStandard(p.deliveredType)?.label,
-    });
+    }));
     store.data.usage.push({
       taskId: task.id, outputType: p.deliveredType, model: gen.model, mode: gen.mode,
       inputTokens: gen.inputTokens, outputTokens: gen.outputTokens, costUsd: gen.costUsd, credits: 0, requestType: "text",
@@ -524,6 +532,7 @@ export function resultsTab(tasks: AlphaTask[]) {
       taskId: t.id, title: t.title, by: r.by, outputType: r.outputType,
       requestedOutputType: r.requestedOutputType, state: r.state,
       requestType: r.requestType, creditsUsed: r.creditsUsed ?? 0, standardLabel: r.standardLabel,
+      qualityLabel: r.qualityLabel, qualityScore: r.qualityScore, recommendRevision: !!r.recommendRevision,
       approved: t.status === "approved", content: r.content,
       canRevise: t.status !== "approved", partialMaterials: !!t.partialMaterials,
     })));
